@@ -1,0 +1,358 @@
+/* JSON Editor Container */
+.jsoneditor-container {
+  flex: 1;
+  min-height: 250px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.body-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 250px;
+}
+
+#responseBodyPanel {
+  display: flex;
+  flex-direction: column;
+}
+
+#responseBodyPanel .jsoneditor-container {
+  flex: 1;
+}
+
+/* Dark Theme Overrides for JSON Editor */
+.jsoneditor {
+  border: 1px solid var(--border-primary) !important;
+  background: var(--bg-tertiary) !important;
+}
+
+.jsoneditor-menu {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+}
+
+/* Menu Icons - Pure white */
+.jsoneditor-menu > button,
+.jsoneditor-menu > .jsoneditor-modes > button,
+.jsoneditor-menu .jsoneditor-repair,
+.jsoneditor-menu .jsoneditor-sort,
+.jsoneditor-menu .jsoneditor-transform,
+.jsoneditor-menu .jsoneditor-undo,
+.jsoneditor-menu .jsoneditor-redo,
+.jsoneditor-menu .jsoneditor-compact,
+.jsoneditor-menu .jsoneditor-format,
+.jsoneditor-menu .jsoneditor-search {
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.9 !important;
+}
+
+.jsoneditor-menu > button:hover,
+.jsoneditor-menu > .jsoneditor-modes > button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+}
+
+.jsoneditor-menu .jsoneditor-modes {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.jsoneditor-menu .jsoneditor-modes > button {
+  color: #fff !important;
+}
+
+.jsoneditor-menu .jsoneditor-separator {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.jsoneditor-navigation-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-primary) !important;
+  color: var(--text-secondary) !important;
+}
+
+.jsoneditor-treepath {
+  color: var(--text-secondary) !important;
+}
+
+.jsoneditor-treepath span.jsoneditor-treepath-element {
+  color: var(--text-primary) !important;
+}
+
+.jsoneditor-statusbar {
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-primary) !important;
+  color: var(--text-muted) !important;
+}
+
+/* Tree Mode */
+.jsoneditor-tree {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+.jsoneditor-tree button,
+.jsoneditor-tree .jsoneditor-button,
+.jsoneditor-tree .jsoneditor-dragarea {
+  filter: brightness(0) invert(1) !important;
+  opacity: 0.8 !important;
+}
+
+.jsoneditor-tree button:hover,
+.jsoneditor-tree .jsoneditor-button:hover {
+  opacity: 1 !important;
+}
+
+.jsoneditor-field {
+  color: #ff79c6 !important;
+}
+
+.jsoneditor-value.jsoneditor-string {
+  color: #50fa7b !important;
+}
+
+.jsoneditor-value.jsoneditor-number {
+  color: #bd93f9 !important;
+}
+
+.jsoneditor-value.jsoneditor-boolean {
+  color: #ffb86c !important;
+}
+
+.jsoneditor-value.jsoneditor-null {
+  color: #ff5555 !important;
+}
+
+.jsoneditor-value.jsoneditor-array,
+.jsoneditor-value.jsoneditor-object {
+  color: var(--text-muted) !important;
+}
+
+.jsoneditor-readonly {
+  color: var(--text-secondary) !important;
+}
+
+.jsoneditor-highlight,
+.jsoneditor tr.jsoneditor-highlight {
+  background: rgba(139, 92, 246, 0.2) !important;
+}
+
+.jsoneditor-selected {
+  background: rgba(139, 92, 246, 0.3) !important;
+}
+
+/* Code Mode (Ace Editor inside) - Dark Theme */
+.jsoneditor-mode-code .jsoneditor-outer,
+.jsoneditor-mode-text .jsoneditor-outer {
+  background: #1a1a2e !important;
+}
+
+.ace-jsoneditor,
+.ace_editor {
+  background: #1a1a2e !important;
+  color: #f8f8f2 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+}
+
+.ace-jsoneditor .ace_scroller,
+.ace_editor .ace_scroller {
+  background: #1a1a2e !important;
+}
+
+.ace-jsoneditor .ace_gutter,
+.ace_editor .ace_gutter {
+  background: #16162a !important;
+  color: #6272a4 !important;
+  border-right: 1px solid #2d2d4a !important;
+}
+
+.ace-jsoneditor .ace_gutter-active-line,
+.ace_editor .ace_gutter-active-line {
+  background: #2d2d4a !important;
+}
+
+.ace-jsoneditor .ace_gutter-cell,
+.ace_editor .ace_gutter-cell {
+  color: #6272a4 !important;
+}
+
+.ace-jsoneditor .ace_marker-layer .ace_active-line,
+.ace_editor .ace_marker-layer .ace_active-line {
+  background: rgba(139, 92, 246, 0.15) !important;
+}
+
+.ace-jsoneditor .ace_cursor,
+.ace_editor .ace_cursor {
+  color: #f8f8f2 !important;
+  border-left: 2px solid #f8f8f2 !important;
+}
+
+.ace-jsoneditor .ace_marker-layer .ace_selection,
+.ace_editor .ace_marker-layer .ace_selection {
+  background: rgba(139, 92, 246, 0.35) !important;
+}
+
+.ace-jsoneditor .ace_invisible,
+.ace_editor .ace_invisible {
+  color: #44475a !important;
+}
+
+.ace-jsoneditor .ace_print-margin,
+.ace_editor .ace_print-margin {
+  background: #2d2d4a !important;
+}
+
+/* Ace Syntax Highlighting - Dracula Theme */
+.ace-jsoneditor .ace_variable,
+.ace_editor .ace_variable {
+  color: #ff79c6 !important;
+}
+
+.ace-jsoneditor .ace_string,
+.ace_editor .ace_string {
+  color: #50fa7b !important;
+}
+
+.ace-jsoneditor .ace_constant.ace_numeric,
+.ace_editor .ace_constant.ace_numeric {
+  color: #bd93f9 !important;
+}
+
+.ace-jsoneditor .ace_constant.ace_language,
+.ace_editor .ace_constant.ace_language {
+  color: #ffb86c !important;
+}
+
+.ace-jsoneditor .ace_keyword,
+.ace_editor .ace_keyword {
+  color: #ff79c6 !important;
+}
+
+.ace-jsoneditor .ace_paren,
+.ace_editor .ace_paren {
+  color: #f8f8f2 !important;
+}
+
+.ace-jsoneditor .ace_text,
+.ace_editor .ace_text {
+  color: #f8f8f2 !important;
+}
+
+.ace-jsoneditor .ace_comment,
+.ace_editor .ace_comment {
+  color: #6272a4 !important;
+  font-style: italic !important;
+}
+
+.ace-jsoneditor .ace_fold,
+.ace_editor .ace_fold {
+  background: #bd93f9 !important;
+  border-color: #f8f8f2 !important;
+}
+
+/* Ace Scrollbar Dark */
+.ace-jsoneditor .ace_scrollbar::-webkit-scrollbar,
+.ace_editor .ace_scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.ace-jsoneditor .ace_scrollbar::-webkit-scrollbar-track,
+.ace_editor .ace_scrollbar::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+.ace-jsoneditor .ace_scrollbar::-webkit-scrollbar-thumb,
+.ace_editor .ace_scrollbar::-webkit-scrollbar-thumb {
+  background: #44475a;
+  border-radius: 4px;
+}
+
+.ace-jsoneditor .ace_scrollbar::-webkit-scrollbar-thumb:hover,
+.ace_editor .ace_scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #6272a4;
+}
+
+/* Context Menu */
+.jsoneditor-contextmenu {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-primary) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.jsoneditor-contextmenu .jsoneditor-menu li {
+  background: var(--bg-secondary) !important;
+}
+
+.jsoneditor-contextmenu .jsoneditor-menu li button {
+  color: var(--text-primary) !important;
+  background: transparent !important;
+}
+
+.jsoneditor-contextmenu .jsoneditor-menu li button:hover {
+  background: var(--bg-hover) !important;
+}
+
+.jsoneditor-contextmenu .jsoneditor-menu li ul li button:hover {
+  background: var(--bg-hover) !important;
+}
+
+/* Modal */
+.jsoneditor-modal {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.jsoneditor-modal input,
+.jsoneditor-modal textarea,
+.jsoneditor-modal select {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-primary) !important;
+}
+
+.jsoneditor-modal table th,
+.jsoneditor-modal table td {
+  border-color: var(--border-primary) !important;
+}
+
+/* Scrollbar */
+.jsoneditor ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.jsoneditor ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.jsoneditor ::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+.jsoneditor ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Response Toolbar */
+.response-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.response-toolbar select {
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+/* Search disabled */

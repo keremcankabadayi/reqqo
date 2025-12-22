@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>REST Client</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="lib/jsoneditor.min.css?v=2">
+  <link rel="stylesheet" href="css/editor.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h1 class="logo">REST Client</h1>
+        <button class="btn-icon" id="newRequestBtn" title="New Request">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-tab active" data-tab="collections">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M2 3h12M2 8h12M2 13h12"/>
+          </svg>
+          Collections
+        </button>
+        <button class="nav-tab" data-tab="history">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M8 5v3l2 2"/>
+          </svg>
+          History
+        </button>
+        <button class="nav-tab" data-tab="environments">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="8" cy="8" r="6"/>
+            <path d="M8 2a6 6 0 0 0 0 12M2 8h12M8 2c2 2 2 10 0 12"/>
+          </svg>
+          Environments
+        </button>
+      </nav>
+      
+      <div class="sidebar-content">
+        <div class="tab-content active" id="collectionsTab">
+          <div class="collections-toolbar">
+            <button class="btn btn-ghost btn-sm" id="importCollectionBtn" title="Import Collections">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M7 10V2M4 5l3-3 3 3"/>
+                <path d="M2 10v2h10v-2"/>
+              </svg>
+              Import
+            </button>
+            <button class="btn btn-ghost btn-sm" id="exportCollectionBtn" title="Export Collections">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M7 2v8M4 7l3 3 3-3"/>
+                <path d="M2 10v2h10v-2"/>
+              </svg>
+              Export
+            </button>
+          </div>
+          <div class="collections-list" id="collectionsList">
+            <div class="empty-state">
+              <p>No collections yet</p>
+              <button class="btn btn-primary btn-sm" id="createCollectionBtn">Create Collection</button>
+            </div>
+          </div>
+          <input type="file" id="importFileInput" accept=".json" style="display: none;">
+        </div>
+        
+        <div class="tab-content" id="historyTab">
+          <div class="history-list" id="historyList">
+            <div class="empty-state">
+              <p>No requests yet</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="tab-content" id="environmentsTab">
+          <div class="environments-list" id="environmentsList">
+            <div class="env-selector">
+              <select id="activeEnvironment">
+                <option value="">No Environment</option>
+              </select>
+              <button class="btn-icon" id="manageEnvsBtn" title="Manage Environments">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="7" cy="7" r="2"/>
+                  <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.5 2.5l1.5 1.5M10 10l1.5 1.5M2.5 11.5l1.5-1.5M10 4l1.5-1.5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- URL Bar -->
+      <div class="url-bar">
+          <select class="method-select" id="requestMethod">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+          </select>
+          <input type="text" class="url-input" id="requestUrl" placeholder="Enter request URL...">
+          <button class="btn btn-primary btn-send" id="sendBtn">
+            <span>Send</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M2 8l12-6-4 6 4 6z"/>
+            </svg>
+          </button>
+          <div class="save-dropdown" id="saveDropdown">
+            <button class="btn btn-secondary" id="saveBtn" title="Save Request">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M11 13H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5l4 4v8a1 1 0 0 1-1 1z"/>
+                <path d="M8 1v4h4"/>
+              </svg>
+              <span>Save</span>
+              <svg class="dropdown-arrow" width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+                <path d="M2 4l3 3 3-3"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" id="saveDropdownMenu">
+              <button class="dropdown-item" id="saveAsNewBtn">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11 13H3a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5l4 4v8a1 1 0 0 1-1 1z"/>
+                  <path d="M8 1v4h4"/>
+                </svg>
+                Save as New
+              </button>
+              <button class="dropdown-item" id="updateRequestBtn">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M10 1l3 3M1 13l.5-2.5L10 2l3 3-8.5 8.5z"/>
+                </svg>
+                Update Current
+              </button>
+            </div>
+          </div>
+      </div>
+      
+      <!-- Two Column Layout -->
+      <div class="content-columns">
+        <!-- Request Section -->
+        <section class="request-section">
+          <div class="request-tabs">
+            <button class="tab-btn active" data-panel="params">Params</button>
+            <button class="tab-btn" data-panel="headers">Headers</button>
+            <button class="tab-btn" data-panel="body">Body</button>
+            <button class="tab-btn" data-panel="auth">Auth</button>
+          </div>
+          
+          <div class="request-panels">
+          <!-- Params Panel -->
+          <div class="panel active" id="paramsPanel">
+            <div class="key-value-editor" id="paramsEditor">
+              <div class="kv-header">
+                <span>Key</span>
+                <span>Value</span>
+                <span></span>
+              </div>
+              <div class="kv-rows" id="paramsRows">
+                <div class="kv-row">
+                  <input type="checkbox" checked>
+                  <input type="text" placeholder="Key" class="kv-key">
+                  <input type="text" placeholder="Value" class="kv-value">
+                  <button class="btn-icon btn-delete">×</button>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm add-row-btn" data-target="paramsRows">+ Add Parameter</button>
+            </div>
+          </div>
+          
+          <!-- Headers Panel -->
+          <div class="panel" id="headersPanel">
+            <div class="key-value-editor" id="headersEditor">
+              <div class="kv-header">
+                <span>Key</span>
+                <span>Value</span>
+                <span></span>
+              </div>
+              <div class="kv-rows" id="headersRows">
+                <div class="kv-row">
+                  <input type="checkbox" checked>
+                  <input type="text" placeholder="Key" class="kv-key" value="Content-Type">
+                  <input type="text" placeholder="Value" class="kv-value" value="application/json">
+                  <button class="btn-icon btn-delete">×</button>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm add-row-btn" data-target="headersRows">+ Add Header</button>
+            </div>
+          </div>
+          
+          <!-- Body Panel -->
+          <div class="panel" id="bodyPanel">
+            <div class="body-type-selector">
+              <label class="radio-label">
+                <input type="radio" name="bodyType" value="none"> None
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="bodyType" value="json" checked> JSON
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="bodyType" value="form-data"> Form Data
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="bodyType" value="raw"> Raw
+              </label>
+            </div>
+            <div class="body-content">
+              <!-- None Content -->
+              <div class="body-type-content" data-body-type="none">
+                <div class="empty-body-state">
+                  <p class="text-muted">This request does not have a body.</p>
+                </div>
+              </div>
+              
+              <!-- JSON Content -->
+              <div class="body-type-content active" data-body-type="json">
+                <div id="requestBodyEditor" class="jsoneditor-container"></div>
+              </div>
+              
+              <!-- Form Data Content -->
+              <div class="body-type-content" data-body-type="form-data">
+                <div class="key-value-editor" id="formDataEditor">
+                  <div class="kv-header">
+                    <span>Key</span>
+                    <span>Value</span>
+                    <span></span>
+                  </div>
+                  <div class="kv-rows" id="formDataRows">
+                    <div class="kv-row">
+                      <input type="checkbox" checked>
+                      <input type="text" placeholder="Key" class="kv-key">
+                      <input type="text" placeholder="Value" class="kv-value">
+                      <button class="btn-icon btn-delete">×</button>
+                    </div>
+                  </div>
+                  <button class="btn btn-ghost btn-sm add-row-btn" data-target="formDataRows">+ Add Field</button>
+                </div>
+              </div>
+              
+              <!-- Raw Content -->
+              <div class="body-type-content" data-body-type="raw">
+                <textarea id="rawBodyEditor" class="raw-body-textarea" placeholder="Enter raw body content..."></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Auth Panel -->
+          <div class="panel" id="authPanel">
+            <div class="auth-type-selector">
+              <select id="authType">
+                <option value="none">No Auth</option>
+                <option value="basic">Basic Auth</option>
+                <option value="bearer">Bearer Token</option>
+                <option value="oauth2">OAuth 2.0</option>
+              </select>
+            </div>
+            <div class="auth-content" id="authContent">
+              <div class="auth-none active" data-auth="none">
+                <p class="text-muted">This request does not use any authorization.</p>
+              </div>
+              <div class="auth-basic" data-auth="basic">
+                <div class="form-group">
+                  <label>Username</label>
+                  <input type="text" id="basicUsername" placeholder="Username">
+                </div>
+                <div class="form-group">
+                  <label>Password</label>
+                  <input type="password" id="basicPassword" placeholder="Password">
+                </div>
+              </div>
+              <div class="auth-bearer" data-auth="bearer">
+                <div class="form-group">
+                  <label>Token</label>
+                  <input type="text" id="bearerToken" placeholder="Enter token...">
+                </div>
+              </div>
+              <div class="auth-oauth2" data-auth="oauth2">
+                <div class="form-group">
+                  <label>Grant Type</label>
+                  <select id="oauth2GrantType">
+                    <option value="authorization_code">Authorization Code</option>
+                    <option value="client_credentials">Client Credentials</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label>Access Token URL</label>
+                  <input type="text" id="oauth2TokenUrl" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                  <label>Client ID</label>
+                  <input type="text" id="oauth2ClientId" placeholder="Client ID">
+                </div>
+                <div class="form-group">
+                  <label>Client Secret</label>
+                  <input type="password" id="oauth2ClientSecret" placeholder="Client Secret">
+                </div>
+                <button class="btn btn-primary" id="getOAuth2Token">Get Token</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        </section>
+        
+        <!-- Response Section -->
+        <section class="response-section" id="responseViewer">
+          <div class="response-header">
+            <div class="response-status" id="responseStatus">
+              <span class="status-badge">Ready</span>
+            </div>
+            <div class="response-meta" id="responseMeta">
+              <span class="meta-item" id="responseTime">--</span>
+              <span class="meta-item" id="responseSize">--</span>
+            </div>
+          </div>
+          
+          <div class="response-tabs">
+            <button class="tab-btn active" data-panel="responseBody">Body</button>
+            <button class="tab-btn" data-panel="responseHeaders">Headers</button>
+          </div>
+          
+          <div class="response-panels">
+            <div class="panel active" id="responseBodyPanel">
+              <div class="response-toolbar">
+                <select id="responseFormat">
+                  <option value="tree">Tree</option>
+                  <option value="code">Code</option>
+                  <option value="text">Text</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="copyResponseBtn">Copy</button>
+              </div>
+              <div id="responseBodyEditor" class="jsoneditor-container"></div>
+            </div>
+            <div class="panel" id="responseHeadersPanel">
+              <div class="response-headers-list" id="responseHeadersList"></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+  
+  <!-- Modals -->
+  <div class="modal" id="saveRequestModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Save Request</h2>
+        <button class="btn-icon modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Collection</label>
+          <div class="collection-select-row">
+            <select id="saveRequestCollection">
+              <option value="">No Collection</option>
+            </select>
+            <button type="button" class="btn-icon btn-add-collection" id="addCollectionInModal" title="Create New Collection">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 2v10M2 7h10"/>
+              </svg>
+            </button>
+          </div>
+          <div class="new-collection-input" id="newCollectionInput" style="display: none;">
+            <input type="text" id="newCollectionName" placeholder="New collection name...">
+            <button type="button" class="btn btn-primary btn-sm" id="confirmNewCollection">Create</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="cancelNewCollection">Cancel</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Request Name</label>
+          <input type="text" id="saveRequestName" placeholder="My Request">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="confirmSaveRequest">Save</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="createCollectionModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create Collection</h2>
+        <button class="btn-icon modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Collection Name</label>
+          <input type="text" id="collectionName" placeholder="My Collection">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="confirmCreateCollection">Create</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal" id="environmentModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content modal-lg">
+      <div class="modal-header">
+        <h2>Manage Environments</h2>
+        <button class="btn-icon modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="env-manager">
+          <div class="env-list-panel">
+            <div class="env-list" id="envManagerList"></div>
+            <button class="btn btn-ghost btn-sm" id="addEnvironmentBtn">+ Add Environment</button>
+          </div>
+          <div class="env-editor-panel">
+            <div class="form-group">
+              <label>Environment Name</label>
+              <input type="text" id="envName" placeholder="Development">
+            </div>
+            <div class="env-variables" id="envVariables">
+              <div class="kv-header">
+                <span>Variable</span>
+                <span>Value</span>
+                <span></span>
+              </div>
+              <div class="kv-rows" id="envVarsRows"></div>
+              <button class="btn btn-ghost btn-sm add-row-btn" data-target="envVarsRows">+ Add Variable</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="saveEnvironment">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="lib/jsoneditor.min.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/placeholders.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/request.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/collections.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
+
