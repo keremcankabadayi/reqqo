@@ -87,3 +87,5 @@ Created by [@keremcankabadayi](https://github.com/keremcankabadayi)
 
 **Reqqo** - Making API testing simple and accessible.
 
+Built with ❤️ using [Cursor AI](https://cursor.com)
+
