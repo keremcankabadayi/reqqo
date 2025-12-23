@@ -23,7 +23,7 @@ class App {
     this.bindEvents();
     this.renderCollections();
     this.renderHistory();
-    this.renderEnvironments();
+    // this.renderEnvironments();
     this.updateMethodColor();
     this.switchBodyType('json');
   }
@@ -121,13 +121,13 @@ class App {
     document.getElementById('clearHistoryBtn').addEventListener('click', () => this.confirmClearHistory());
     document.getElementById('cancelNewCollection').addEventListener('click', () => this.hideNewCollectionInput());
 
-    document.getElementById('manageEnvsBtn').addEventListener('click', () => this.openEnvironmentModal());
-    document.getElementById('addEnvironmentBtn').addEventListener('click', () => this.addEnvironment());
-    document.getElementById('saveEnvironment').addEventListener('click', () => this.saveEnvironment());
+    // document.getElementById('manageEnvsBtn').addEventListener('click', () => this.openEnvironmentModal());
+    // document.getElementById('addEnvironmentBtn').addEventListener('click', () => this.addEnvironment());
+    // document.getElementById('saveEnvironment').addEventListener('click', () => this.saveEnvironment());
 
-    document.getElementById('activeEnvironment').addEventListener('change', async (e) => {
-      await placeholderManager.setActiveEnvironment(e.target.value);
-    });
+    // document.getElementById('activeEnvironment').addEventListener('change', async (e) => {
+    //   await placeholderManager.setActiveEnvironment(e.target.value);
+    // });
 
     document.getElementById('copyResponseBtn').addEventListener('click', () => this.copyResponse());
 

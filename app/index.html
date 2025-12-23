@@ -38,13 +38,6 @@
           </svg>
           History
         </button>
-        <button class="nav-tab" data-tab="environments">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="8" cy="8" r="6"/>
-            <path d="M8 2a6 6 0 0 0 0 12M2 8h12M8 2c2 2 2 10 0 12"/>
-          </svg>
-          Environments
-        </button>
       </nav>
       
       <div class="sidebar-content">
@@ -88,22 +81,6 @@
           <div class="history-list" id="historyList">
             <div class="empty-state">
               <p>No requests yet</p>
-            </div>
-          </div>
-        </div>
-        
-        <div class="tab-content" id="environmentsTab">
-          <div class="environments-list" id="environmentsList">
-            <div class="env-selector">
-              <select id="activeEnvironment">
-                <option value="">No Environment</option>
-              </select>
-              <button class="btn-icon" id="manageEnvsBtn" title="Manage Environments">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <circle cx="7" cy="7" r="2"/>
-                  <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.5 2.5l1.5 1.5M10 10l1.5 1.5M2.5 11.5l1.5-1.5M10 4l1.5-1.5"/>
-                </svg>
-              </button>
             </div>
           </div>
         </div>
@@ -426,43 +403,6 @@
       <div class="modal-footer">
         <button class="btn btn-secondary modal-cancel">Cancel</button>
         <button class="btn btn-primary" id="confirmCreateCollection">Create</button>
-      </div>
-    </div>
-  </div>
-  
-  <div class="modal" id="environmentModal">
-    <div class="modal-overlay"></div>
-    <div class="modal-content modal-lg">
-      <div class="modal-header">
-        <h2>Manage Environments</h2>
-        <button class="btn-icon modal-close">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="env-manager">
-          <div class="env-list-panel">
-            <div class="env-list" id="envManagerList"></div>
-            <button class="btn btn-ghost btn-sm" id="addEnvironmentBtn">+ Add Environment</button>
-          </div>
-          <div class="env-editor-panel">
-            <div class="form-group">
-              <label>Environment Name</label>
-              <input type="text" id="envName" placeholder="Development">
-            </div>
-            <div class="env-variables" id="envVariables">
-              <div class="kv-header">
-                <span>Variable</span>
-                <span>Value</span>
-                <span></span>
-              </div>
-              <div class="kv-rows" id="envVarsRows"></div>
-              <button class="btn btn-ghost btn-sm add-row-btn" data-target="envVarsRows">+ Add Variable</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary modal-cancel">Cancel</button>
-        <button class="btn btn-primary" id="saveEnvironment">Save</button>
       </div>
     </div>
   </div>
