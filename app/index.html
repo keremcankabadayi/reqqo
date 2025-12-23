@@ -75,6 +75,16 @@
         </div>
         
         <div class="tab-content" id="historyTab">
+          <div class="history-header">
+            <input type="text" id="historySearch" placeholder="Search history..." class="search-input">
+            <button class="btn btn-ghost btn-sm" id="clearHistoryBtn" title="Clear All History">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M2 3h10M4 3V2h6v1M3 3v9a1 1 0 001 1h6a1 1 0 001-1V3"/>
+                <path d="M6 5v5M8 5v5"/>
+              </svg>
+              Clear All
+            </button>
+          </div>
           <div class="history-list" id="historyList">
             <div class="empty-state">
               <p>No requests yet</p>

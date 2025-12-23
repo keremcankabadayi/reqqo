@@ -114,6 +114,9 @@ class App {
 
     document.getElementById('addCollectionInModal').addEventListener('click', () => this.showNewCollectionInput());
     document.getElementById('confirmNewCollection').addEventListener('click', () => this.createCollectionInModal());
+
+    document.getElementById('historySearch').addEventListener('input', (e) => this.searchHistory(e.target.value));
+    document.getElementById('clearHistoryBtn').addEventListener('click', () => this.confirmClearHistory());
     document.getElementById('cancelNewCollection').addEventListener('click', () => this.hideNewCollectionInput());
 
     document.getElementById('manageEnvsBtn').addEventListener('click', () => this.openEnvironmentModal());
@@ -295,6 +298,14 @@ class App {
     
     const body = this.getBodyForCurrentType();
 
+    let collectionName = null;
+    if (this.currentRequest.collectionId) {
+      const collection = await collectionsManager.getCollection(this.currentRequest.collectionId);
+      if (collection) {
+        collectionName = collection.name;
+      }
+    }
+
     const result = await requestManager.send({
       method: this.currentRequest.method,
       url: url,
@@ -302,7 +313,10 @@ class App {
       params: this.currentRequest.params,
       bodyType: this.currentRequest.bodyType,
       body: body,
-      formData: this.currentRequest.formData
+      formData: this.currentRequest.formData,
+      collectionId: this.currentRequest.collectionId,
+      collectionName: collectionName,
+      requestName: this.currentRequest.name
     });
 
     this.setLoading(false);
@@ -454,6 +468,11 @@ class App {
   renderKeyValueRows(containerId, data) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
+
+    if (!Array.isArray(data)) {
+      console.warn('renderKeyValueRows: data is not an array', containerId, data);
+      data = [];
+    }
 
     data.forEach(item => {
       const row = document.createElement('div');
@@ -764,9 +783,30 @@ class App {
       items.forEach(item => {
         const itemEl = document.createElement('div');
         itemEl.className = 'history-item';
+        
+        const statusCode = item.response?.status || 0;
+        const statusClass = statusCode >= 200 && statusCode < 300 ? 'status-2xx' :
+                           statusCode >= 400 && statusCode < 500 ? 'status-4xx' :
+                           statusCode >= 500 ? 'status-5xx' : 'status-other';
+        
+        const collectionInfo = item.collectionName && item.requestName 
+          ? `${item.collectionName} / ${item.requestName}`
+          : item.requestName || 'Kaydedilmemiş';
+        
+        const timestamp = historyManager.formatFullTimestamp(item.timestamp);
+        
+        const fullUrl = this.buildFullUrlFromHistory(item);
+        
         itemEl.innerHTML = `
-          <span class="method-badge ${item.method.toLowerCase()}">${item.method}</span>
-          <span class="history-url">${this.escapeHtml(this.truncateUrl(item.url))}</span>
+          <div class="history-item-header">
+            <span class="method-badge ${item.method.toLowerCase()}">${item.method}</span>
+            <span class="history-status ${statusClass}">${statusCode}</span>
+            <span class="history-timestamp">${timestamp}</span>
+          </div>
+          <div class="history-item-body">
+            <span class="history-collection">${this.escapeHtml(collectionInfo)}</span>
+            <span class="history-url" title="${this.escapeHtml(fullUrl)}">${this.escapeHtml(fullUrl)}</span>
+          </div>
           <div class="history-actions">
             <button class="action-btn save" title="Save to Collection">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -782,13 +822,9 @@ class App {
           </div>
         `;
         
-        itemEl.addEventListener('click', (e) => {
+        itemEl.addEventListener('click', async (e) => {
           if (!e.target.closest('.history-actions')) {
-            document.getElementById('requestMethod').value = item.method;
-            document.getElementById('requestUrl').value = item.url;
-            this.currentRequest.method = item.method;
-            this.currentRequest.url = item.url;
-            this.updateMethodColor();
+            await this.loadHistoryItem(item.id);
           }
         });
 
@@ -814,9 +850,200 @@ class App {
     renderGroup('Older', groups.older);
   }
 
+  async loadHistoryItem(historyId) {
+    const item = await historyManager.getHistoryItem(historyId);
+    if (!item) return;
+    
+    let baseUrl = item.url;
+    let urlParams = item.requestParams || [];
+    
+    if (baseUrl.includes('?') && urlParams.length === 0) {
+      try {
+        const urlObj = new URL(baseUrl);
+        baseUrl = urlObj.origin + urlObj.pathname;
+        
+        urlParams = [];
+        urlObj.searchParams.forEach((value, key) => {
+          urlParams.push({ enabled: true, key, value });
+        });
+      } catch (e) {
+        baseUrl = baseUrl.split('?')[0];
+      }
+    }
+    
+    let headers = [];
+    if (Array.isArray(item.requestHeaders)) {
+      headers = item.requestHeaders;
+    } else if (typeof item.requestHeaders === 'object' && item.requestHeaders !== null) {
+      headers = Object.entries(item.requestHeaders).map(([key, value]) => ({
+        enabled: true,
+        key,
+        value
+      }));
+    }
+    
+    this.currentRequest = {
+      id: null,
+      name: '',
+      method: item.method,
+      url: baseUrl,
+      headers: headers,
+      params: Array.isArray(urlParams) ? urlParams : [],
+      bodyType: item.bodyType || 'json',
+      body: item.requestBody || '',
+      formData: Array.isArray(item.formData) ? item.formData : [{ enabled: true, key: '', value: '' }],
+      rawBody: item.rawBody || '',
+      collectionId: null
+    };
+
+    document.getElementById('requestMethod').value = item.method;
+    document.getElementById('requestUrl').value = baseUrl;
+    
+    const bodyType = item.bodyType || 'json';
+    const bodyTypeRadio = document.querySelector(`[name="bodyType"][value="${bodyType}"]`);
+    if (bodyTypeRadio) bodyTypeRadio.checked = true;
+    this.switchBodyType(bodyType);
+    
+    if (bodyType === 'json' && typeof setRequestBody === 'function') {
+      setRequestBody(item.requestBody || '');
+    }
+    
+    this.renderKeyValueRows('formDataRows', this.currentRequest.formData);
+    
+    const rawEditor = document.getElementById('rawBodyEditor');
+    if (rawEditor) rawEditor.value = this.currentRequest.rawBody;
+
+    this.renderKeyValueRows('headersRows', this.currentRequest.headers);
+    this.renderKeyValueRows('paramsRows', this.currentRequest.params);
+
+    this.updateMethodColor();
+    
+    if (item.response) {
+      setTimeout(() => {
+        this.displayResponse({
+          success: true,
+          status: item.response.status,
+          statusText: item.response.statusText,
+          headers: item.response.headers || {},
+          body: item.response.body !== undefined ? item.response.body : '',
+          duration: item.response.duration,
+          size: item.response.size,
+          url: baseUrl
+        });
+        
+        this.switchResponseTab('responseBody');
+        
+        const responsePanel = document.querySelector('.response-section');
+        if (responsePanel) {
+          responsePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }, 200);
+    }
+  }
+
+  async searchHistory(query) {
+    const container = document.getElementById('historyList');
+    
+    if (!query.trim()) {
+      await this.renderHistory();
+      return;
+    }
+    
+    const results = await historyManager.searchHistory(query);
+    
+    if (results.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <p>No results found</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = '';
+    
+    results.forEach(item => {
+      const itemEl = document.createElement('div');
+      itemEl.className = 'history-item';
+      
+      const statusCode = item.response?.status || 0;
+      const statusClass = statusCode >= 200 && statusCode < 300 ? 'status-2xx' :
+                         statusCode >= 400 && statusCode < 500 ? 'status-4xx' :
+                         statusCode >= 500 ? 'status-5xx' : 'status-other';
+      
+      const collectionInfo = item.collectionName && item.requestName 
+        ? `${item.collectionName} / ${item.requestName}`
+        : item.requestName || 'Kaydedilmemiş';
+      
+      const timestamp = historyManager.formatFullTimestamp(item.timestamp);
+      
+      const fullUrl = this.buildFullUrlFromHistory(item);
+      
+      itemEl.innerHTML = `
+        <div class="history-item-header">
+          <span class="method-badge ${item.method.toLowerCase()}">${item.method}</span>
+          <span class="history-status ${statusClass}">${statusCode}</span>
+          <span class="history-timestamp">${timestamp}</span>
+        </div>
+        <div class="history-item-body">
+          <span class="history-collection">${this.escapeHtml(collectionInfo)}</span>
+          <span class="history-url" title="${this.escapeHtml(fullUrl)}">${this.escapeHtml(fullUrl)}</span>
+        </div>
+        <div class="history-actions">
+          <button class="action-btn save" title="Save to Collection">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 10H3a1 1 0 01-1-1V3a1 1 0 011-1h4l3 3v5a1 1 0 01-1 1z"/>
+              <path d="M7 2v3h3"/>
+            </svg>
+          </button>
+          <button class="action-btn delete" title="Delete">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2 3h8M4 3V2h4v1M3 3v7a1 1 0 001 1h4a1 1 0 001-1V3"/>
+            </svg>
+          </button>
+        </div>
+      `;
+      
+      itemEl.addEventListener('click', async (e) => {
+        if (!e.target.closest('.history-actions')) {
+          await this.loadHistoryItem(item.id);
+        }
+      });
+
+      itemEl.querySelector('.action-btn.save').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.saveHistoryItemToCollection(item);
+      });
+
+      itemEl.querySelector('.action-btn.delete').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.deleteHistoryItem(item.id);
+      });
+
+      container.appendChild(itemEl);
+    });
+  }
+
+  confirmClearHistory() {
+    if (confirm('Tüm geçmişi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+      this.clearAllHistory();
+    }
+  }
+
+  async clearAllHistory() {
+    await historyManager.clearHistory();
+    document.getElementById('historySearch').value = '';
+    await this.renderHistory();
+  }
+
   async deleteHistoryItem(historyId) {
     await historyManager.deleteHistoryItem(historyId);
-    this.renderHistory();
+    const searchQuery = document.getElementById('historySearch').value;
+    if (searchQuery.trim()) {
+      await this.searchHistory(searchQuery);
+    } else {
+      await this.renderHistory();
+    }
   }
 
   saveHistoryItemToCollection(historyItem) {
@@ -829,7 +1056,36 @@ class App {
     this.openSaveModal();
   }
 
+  buildFullUrlFromHistory(item) {
+    let fullUrl = item.url;
+    
+    if (item.requestParams && item.requestParams.length > 0) {
+      const enabledParams = item.requestParams.filter(p => p.enabled && p.key);
+      if (enabledParams.length > 0) {
+        try {
+          const urlObj = new URL(fullUrl);
+          enabledParams.forEach(param => {
+            urlObj.searchParams.append(param.key, param.value || '');
+          });
+          fullUrl = urlObj.toString();
+        } catch (e) {
+          const paramString = enabledParams
+            .map(p => `${encodeURIComponent(p.key)}=${encodeURIComponent(p.value || '')}`)
+            .join('&');
+          fullUrl = fullUrl + (fullUrl.includes('?') ? '&' : '?') + paramString;
+        }
+      }
+    }
+    
+    return fullUrl;
+  }
+
   truncateUrl(url) {
+    if (url.length <= 80) return url;
+    return url.substring(0, 77) + '...';
+  }
+
+  truncateUrlOld(url) {
     if (url.length <= 40) return url;
     try {
       const urlObj = new URL(url);

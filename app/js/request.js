@@ -92,7 +92,7 @@ class RequestManager {
   }
 
   async send(config) {
-    const { method, url, headers, params, bodyType, body, formData } = config;
+    const { method, url, headers, params, bodyType, body, formData, collectionId, collectionName, requestName } = config;
 
     this.abortController = new AbortController();
     const startTime = performance.now();
@@ -163,9 +163,14 @@ class RequestManager {
 
       await historyManager.addToHistory({
         method,
-        url: finalUrl,
+        url: url,
+        collectionId: collectionId || null,
+        collectionName: collectionName || null,
+        requestName: requestName || null,
         requestHeaders: finalHeaders,
         requestBody: body,
+        requestParams: params || [],
+        bodyType: bodyType || 'json',
         response: result
       });
 

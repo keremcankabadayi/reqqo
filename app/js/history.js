@@ -7,11 +7,18 @@ class HistoryManager {
     const historyItem = {
       method: requestData.method,
       url: requestData.url,
+      collectionId: requestData.collectionId || null,
+      collectionName: requestData.collectionName || null,
+      requestName: requestData.requestName || null,
       requestHeaders: requestData.requestHeaders,
       requestBody: requestData.requestBody,
+      requestParams: requestData.requestParams || [],
+      bodyType: requestData.bodyType || 'json',
       response: {
         status: requestData.response.status,
         statusText: requestData.response.statusText,
+        headers: requestData.response.headers || {},
+        body: requestData.response.body || '',
         duration: requestData.response.duration,
         size: requestData.response.size
       },
@@ -56,10 +63,21 @@ class HistoryManager {
     const history = await this.getHistory();
     const lowerQuery = query.toLowerCase();
     
-    return history.filter(item => 
-      item.url.toLowerCase().includes(lowerQuery) ||
-      item.method.toLowerCase().includes(lowerQuery)
-    );
+    return history.filter(item => {
+      const searchableText = [
+        item.url,
+        item.method,
+        item.collectionName || '',
+        item.requestName || '',
+        item.requestBody || '',
+        JSON.stringify(item.requestHeaders || {}),
+        JSON.stringify(item.response?.body || ''),
+        JSON.stringify(item.response?.headers || {}),
+        item.response?.status?.toString() || ''
+      ].join(' ').toLowerCase();
+      
+      return searchableText.includes(lowerQuery);
+    });
   }
 
   formatTimestamp(timestamp) {
@@ -81,6 +99,18 @@ class HistoryManager {
     } else {
       return date.toLocaleDateString();
     }
+  }
+
+  formatFullTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    
+    return `${day}.${month}.${year}, ${hours}:${minutes}:${seconds}`;
   }
 
   groupHistoryByDate(history) {
