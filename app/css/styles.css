@@ -93,6 +93,8 @@ html, body {
 /* Sidebar */
 .sidebar {
   width: var(--sidebar-width);
+  min-width: 200px;
+  max-width: 500px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-primary);
   display: flex;
@@ -689,7 +691,9 @@ html, body {
 }
 
 .request-section {
-  flex: 1;
+  width: 35%;
+  min-width: 300px;
+  max-width: 60%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -703,6 +707,40 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-primary);
+}
+
+.resize-handle {
+  width: 4px;
+  background: var(--border-primary);
+  cursor: col-resize;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.resize-handle:hover {
+  background: var(--accent-primary);
+}
+
+.resize-handle.resizing {
+  background: var(--accent-primary);
+}
+
+.sidebar-resize-handle {
+  width: 4px;
+  background: var(--border-primary);
+  cursor: col-resize;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar-resize-handle:hover {
+  background: var(--accent-primary);
+}
+
+.sidebar-resize-handle.resizing {
+  background: var(--accent-primary);
 }
 
 .url-bar {

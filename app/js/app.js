@@ -22,11 +22,82 @@ class App {
     await collectionsManager.loadCollections();
 
     this.bindEvents();
+    this.setupResizers();
     this.renderCollections();
     this.renderHistory();
     // this.renderEnvironments();
     this.updateMethodColor();
     this.switchBodyType('json');
+  }
+
+  setupResizers() {
+    // Request/Response resizer
+    const resizeHandle = document.getElementById('resizeHandle');
+    const requestSection = document.querySelector('.request-section');
+    const responseSection = document.querySelector('.response-section');
+    
+    let isResizing = false;
+    
+    resizeHandle.addEventListener('mousedown', (e) => {
+      isResizing = true;
+      resizeHandle.classList.add('resizing');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isResizing) return;
+      
+      const container = document.querySelector('.content-columns');
+      const containerRect = container.getBoundingClientRect();
+      const newWidth = e.clientX - containerRect.left;
+      const percentage = (newWidth / containerRect.width) * 100;
+      
+      if (percentage >= 20 && percentage <= 70) {
+        requestSection.style.width = `${percentage}%`;
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isResizing) {
+        isResizing = false;
+        resizeHandle.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+    
+    // Sidebar resizer
+    const sidebarResizeHandle = document.getElementById('sidebarResizeHandle');
+    const sidebar = document.querySelector('.sidebar');
+    
+    let isSidebarResizing = false;
+    
+    sidebarResizeHandle.addEventListener('mousedown', (e) => {
+      isSidebarResizing = true;
+      sidebarResizeHandle.classList.add('resizing');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+      if (!isSidebarResizing) return;
+      
+      const newWidth = e.clientX;
+      
+      if (newWidth >= 200 && newWidth <= 500) {
+        sidebar.style.width = `${newWidth}px`;
+      }
+    });
+    
+    document.addEventListener('mouseup', () => {
+      if (isSidebarResizing) {
+        isSidebarResizing = false;
+        sidebarResizeHandle.classList.remove('resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
   }
 
   bindEvents() {
