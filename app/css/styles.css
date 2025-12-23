@@ -1027,10 +1027,29 @@ html, body {
 .request-tabs,
 .response-tabs {
   display: flex;
-  gap: 4px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
   padding: 0 16px;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-primary);
+}
+
+.request-tabs {
+  justify-content: flex-start;
+}
+
+.response-tabs-left {
+  display: flex;
+  gap: 4px;
+}
+
+.response-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .tab-btn {

@@ -317,31 +317,30 @@
         
         <!-- Response Section -->
         <section class="response-section" id="responseViewer">
-          <div class="response-header">
-            <div class="response-status" id="responseStatus">
-              <span class="status-badge">Ready</span>
-            </div>
-            <div class="response-meta" id="responseMeta">
-              <span class="meta-item" id="responseTime">--</span>
-              <span class="meta-item" id="responseSize">--</span>
-            </div>
-          </div>
-          
           <div class="response-tabs">
-            <button class="tab-btn active" data-panel="responseBody">Body</button>
-            <button class="tab-btn" data-panel="responseHeaders">Headers</button>
+            <div class="response-tabs-left">
+              <button class="tab-btn active" data-panel="responseBody">Body</button>
+              <button class="tab-btn" data-panel="responseHeaders">Headers</button>
+            </div>
+            <div class="response-info">
+              <div class="response-status" id="responseStatus">
+                <span class="status-badge">Ready</span>
+              </div>
+              <div class="response-meta" id="responseMeta">
+                <span class="meta-item" id="responseTime">--</span>
+                <span class="meta-item" id="responseSize">--</span>
+              </div>
+            </div>
+            <button class="btn-icon" id="copyResponseBtn" title="Copy Response">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="5" y="5" width="9" height="9" rx="1"/>
+                <path d="M11 5V3a1 1 0 00-1-1H3a1 1 0 00-1 1v7a1 1 0 001 1h2"/>
+              </svg>
+            </button>
           </div>
           
           <div class="response-panels">
             <div class="panel active" id="responseBodyPanel">
-              <div class="response-toolbar">
-                <select id="responseFormat">
-                  <option value="tree">Tree</option>
-                  <option value="code">Code</option>
-                  <option value="text">Text</option>
-                </select>
-                <button class="btn btn-ghost btn-sm" id="copyResponseBtn">Copy</button>
-              </div>
               <div id="responseBodyEditor" class="jsoneditor-container"></div>
             </div>
             <div class="panel" id="responseHeadersPanel">

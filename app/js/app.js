@@ -208,8 +208,6 @@ class App {
 
     document.getElementById('copyResponseBtn').addEventListener('click', () => this.copyResponse());
 
-    document.getElementById('responseFormat').addEventListener('change', () => this.formatResponse());
-
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-overlay').forEach(el => {
       el.addEventListener('click', () => this.closeModals());
     });
@@ -629,15 +627,16 @@ class App {
     try {
       await navigator.clipboard.writeText(text);
       const btn = document.getElementById('copyResponseBtn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      const originalTitle = btn.title;
+      btn.title = 'Copied!';
+      btn.style.color = 'var(--success)';
+      setTimeout(() => { 
+        btn.title = originalTitle;
+        btn.style.color = '';
+      }, 2000);
     } catch {
       alert('Failed to copy to clipboard');
     }
-  }
-
-  formatResponse() {
-    // JSON Editor handles format internally via mode change
   }
 
   newRequest() {

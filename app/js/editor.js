@@ -47,20 +47,6 @@ function initEditors() {
     responseBodyEditor.setText('Send a request to see the response');
   }
   
-  // Response format change
-  const formatSelect = document.getElementById('responseFormat');
-  if (formatSelect) {
-    formatSelect.addEventListener('change', (e) => {
-      if (responseBodyEditor) {
-        try {
-          responseBodyEditor.setMode(e.target.value === 'tree' ? 'view' : e.target.value);
-        } catch (err) {
-          console.warn('Could not change mode:', err);
-        }
-      }
-    });
-  }
-  
 }
 
 // Helper functions for external access
