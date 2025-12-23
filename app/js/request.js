@@ -108,7 +108,8 @@ class RequestManager {
       const fetchOptions = {
         method,
         headers: finalHeaders,
-        signal: this.abortController.signal
+        signal: this.abortController.signal,
+        credentials: 'omit'
       };
 
       if (method !== 'GET' && method !== 'HEAD' && finalBody) {
