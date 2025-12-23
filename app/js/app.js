@@ -58,6 +58,8 @@ class App {
       }
     });
 
+    document.getElementById('openInTabBtn').addEventListener('click', () => this.openInNewTab());
+
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.addEventListener('click', () => this.switchSidebarTab(tab.dataset.tab));
     });
@@ -285,6 +287,21 @@ class App {
       <button class="btn-icon btn-delete">×</button>
     `;
     container.appendChild(row);
+  }
+
+  openInNewTab() {
+    let url = document.getElementById('requestUrl').value.trim();
+    if (!url) {
+      alert('Please enter a URL');
+      return;
+    }
+
+    const finalUrl = requestManager.buildUrl(
+      placeholderManager.replacePlaceholders(url),
+      this.currentRequest.params
+    );
+    
+    window.open(finalUrl, '_blank');
   }
 
   async sendRequest() {

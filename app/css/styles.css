@@ -616,9 +616,16 @@ html, body {
   border-color: var(--accent-primary);
 }
 
+.url-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .url-input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 10px 40px 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
@@ -626,6 +633,7 @@ html, body {
   font-family: var(--font-mono);
   font-size: 13px;
   transition: border-color 0.15s ease;
+  width: 100%;
 }
 
 .url-input::placeholder {
@@ -635,6 +643,36 @@ html, body {
 .url-input:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+.btn-icon-inline {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  opacity: 0.7;
+}
+
+.btn-icon-inline:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.btn-icon-inline:active {
+  transform: translateY(-50%) scale(0.95);
 }
 
 /* Buttons */
