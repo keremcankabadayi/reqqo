@@ -195,6 +195,121 @@ html, body {
   gap: 4px;
 }
 
+.collection-group {
+  margin-bottom: 8px;
+}
+
+.collection-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.collection-header:hover {
+  background: var(--bg-hover);
+}
+
+.expand-toggle {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.collection-group.collapsed .expand-toggle svg {
+  transform: rotate(-90deg);
+}
+
+.collection-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.badge {
+  padding: 2px 6px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.collection-actions {
+  display: none;
+  gap: 4px;
+}
+
+.collection-header:hover .collection-actions {
+  display: flex;
+}
+
+.collection-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 8px;
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 1;
+}
+
+.collection-group.collapsed .collection-requests {
+  max-height: 0;
+  opacity: 0;
+}
+
+.request-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.request-item:hover {
+  background: var(--bg-hover);
+}
+
+.request-item.active {
+  background: var(--bg-hover);
+  border-left: 2px solid var(--accent-primary);
+}
+
+.request-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+.request-actions {
+  display: none;
+  gap: 2px;
+}
+
+.request-item:hover .request-actions {
+  display: flex;
+}
+
 .history-header {
   display: flex;
   gap: 8px;

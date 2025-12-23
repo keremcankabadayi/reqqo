@@ -13,6 +13,7 @@ class App {
       rawBody: ''
     };
     this.isLoading = false;
+    this.collapsedCollections = new Set();
   }
 
   async init() {
@@ -641,6 +642,18 @@ class App {
     }
   }
 
+  toggleCollection(collectionId) {
+    const collectionEl = document.querySelector(`.collection-group .collection-header[data-id="${collectionId}"]`).parentElement;
+    
+    if (this.collapsedCollections.has(collectionId)) {
+      this.collapsedCollections.delete(collectionId);
+      collectionEl.classList.remove('collapsed');
+    } else {
+      this.collapsedCollections.add(collectionId);
+      collectionEl.classList.add('collapsed');
+    }
+  }
+
   async renderCollections() {
     const container = document.getElementById('collectionsList');
     const collections = await collectionsManager.loadCollections();
@@ -661,10 +674,21 @@ class App {
     for (const collection of collections) {
       const requests = await collectionsManager.getRequestsInCollection(collection.id);
       
+      if (!this.collapsedCollections.has(collection.id)) {
+        this.collapsedCollections.add(collection.id);
+      }
+      
+      const isCollapsed = this.collapsedCollections.has(collection.id);
+      
       const collectionEl = document.createElement('div');
-      collectionEl.className = 'collection-group';
+      collectionEl.className = `collection-group ${isCollapsed ? 'collapsed' : ''}`;
       collectionEl.innerHTML = `
         <div class="collection-header" data-id="${collection.id}">
+          <button class="expand-toggle">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 5 6 8 9 5"/>
+            </svg>
+          </button>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M2 3h10M2 7h10M2 11h10"/>
           </svg>
@@ -685,6 +709,14 @@ class App {
         </div>
         <div class="collection-requests" data-collection="${collection.id}"></div>
       `;
+
+      const headerEl = collectionEl.querySelector('.collection-header');
+      
+      headerEl.addEventListener('click', (e) => {
+        if (!e.target.closest('.collection-actions')) {
+          this.toggleCollection(collection.id);
+        }
+      });
 
       collectionEl.querySelector('.action-btn.edit').addEventListener('click', (e) => {
         e.stopPropagation();
