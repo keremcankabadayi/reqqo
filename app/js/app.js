@@ -14,6 +14,9 @@ class App {
     };
     this.isLoading = false;
     this.collapsedCollections = new Set();
+    this.isSyncingUrl = false;
+    this.isSyncingParams = false;
+    this.syncUrlDebounceTimer = null;
   }
 
   async init() {
@@ -343,6 +346,7 @@ class App {
 
     if (containerId === 'paramsRows') {
       this.currentRequest.params = data;
+      this.syncUrlFromParams();
     } else if (containerId === 'headersRows') {
       this.currentRequest.headers = data;
     } else if (containerId === 'formDataRows') {
@@ -510,6 +514,112 @@ class App {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  extractUrlParameters(url) {
+    if (!url) return [];
+    
+    const paramNames = new Set();
+    const regex = /\{([^}]+)\}/g;
+    let match;
+    
+    while ((match = regex.exec(url)) !== null) {
+      paramNames.add(match[1]);
+    }
+    
+    return Array.from(paramNames);
+  }
+
+  updateUrlWithParams(url, params) {
+    if (!url) return url;
+    
+    let updatedUrl = url;
+    const enabledParams = params.filter(p => p.enabled && p.key && p.key.trim());
+    
+    const urlParamNames = this.extractUrlParameters(url);
+    
+    for (const param of enabledParams) {
+      const paramKey = param.key.trim();
+      
+      if (!urlParamNames.includes(paramKey)) {
+        const separator = updatedUrl.includes('?') ? '&' : '?';
+        updatedUrl += `${separator}${paramKey}={${paramKey}}`;
+      }
+    }
+    
+    const currentUrlParams = this.extractUrlParameters(updatedUrl);
+    for (const urlParam of currentUrlParams) {
+      const existsInParams = enabledParams.some(p => p.key.trim() === urlParam);
+      if (!existsInParams) {
+        updatedUrl = updatedUrl.replace(new RegExp(`[?&]?${urlParam}=\\{${urlParam}\\}&?`, 'g'), '');
+        updatedUrl = updatedUrl.replace(new RegExp(`\\{${urlParam}\\}`, 'g'), '');
+        updatedUrl = updatedUrl.replace(/\?&/, '?').replace(/&&/, '&');
+        updatedUrl = updatedUrl.replace(/[?&]$/, '');
+      }
+    }
+    
+    return updatedUrl;
+  }
+
+  syncParamsFromUrl() {
+    if (this.isSyncingParams) return;
+    
+    this.isSyncingUrl = true;
+    
+    const url = document.getElementById('requestUrl').value;
+    const urlParamNames = this.extractUrlParameters(url);
+    
+    const currentParams = this.currentRequest.params.filter(p => p.key && p.key.trim());
+    const currentParamKeys = currentParams.map(p => p.key.trim());
+    
+    const newParams = [];
+    
+    for (const paramName of urlParamNames) {
+      const existingParam = currentParams.find(p => p.key.trim() === paramName);
+      if (existingParam) {
+        newParams.push(existingParam);
+      } else {
+        newParams.push({ enabled: true, key: paramName, value: '' });
+      }
+    }
+    
+    for (const param of currentParams) {
+      if (!urlParamNames.includes(param.key.trim()) && param.key.trim()) {
+        newParams.push(param);
+      }
+    }
+    
+    if (newParams.length === 0) {
+      newParams.push({ enabled: true, key: '', value: '' });
+    }
+    
+    this.currentRequest.params = newParams;
+    this.renderKeyValueRows('paramsRows', newParams);
+    
+    this.isSyncingUrl = false;
+  }
+
+  syncUrlFromParams() {
+    if (this.isSyncingUrl) return;
+    
+    if (this.syncUrlDebounceTimer) {
+      clearTimeout(this.syncUrlDebounceTimer);
+    }
+    
+    this.syncUrlDebounceTimer = setTimeout(() => {
+      this.isSyncingParams = true;
+      
+      const currentUrl = document.getElementById('requestUrl').value;
+      const updatedUrl = this.updateUrlWithParams(currentUrl, this.currentRequest.params);
+      
+      if (updatedUrl !== currentUrl) {
+        document.getElementById('requestUrl').value = updatedUrl;
+        this.currentRequest.url = updatedUrl;
+      }
+      
+      this.isSyncingParams = false;
+      this.syncUrlDebounceTimer = null;
+    }, 500);
   }
 
   async copyResponse() {
