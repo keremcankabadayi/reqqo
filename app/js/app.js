@@ -31,6 +31,7 @@ class App {
 
   bindEvents() {
     document.getElementById('sendBtn').addEventListener('click', () => this.sendRequest());
+    document.getElementById('cancelBtn').addEventListener('click', () => this.cancelRequest());
     document.getElementById('saveBtn').addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleSaveDropdown();
@@ -111,8 +112,9 @@ class App {
     document.getElementById('confirmCreateCollection').addEventListener('click', () => this.createCollection());
     document.getElementById('confirmSaveRequest').addEventListener('click', () => this.saveRequest());
     
-    document.getElementById('exportCollectionBtn').addEventListener('click', () => this.exportCollections());
-    document.getElementById('importCollectionBtn').addEventListener('click', () => this.triggerImport());
+    document.getElementById('settingsBtn').addEventListener('click', () => this.openSettingsModal());
+    document.getElementById('exportCollectionBtnSettings').addEventListener('click', () => this.exportCollections());
+    document.getElementById('importCollectionBtnSettings').addEventListener('click', () => this.triggerImport());
     document.getElementById('importFileInput').addEventListener('change', (e) => this.importCollections(e));
 
     document.getElementById('addCollectionInModal').addEventListener('click', () => this.showNewCollectionInput());
@@ -305,6 +307,11 @@ class App {
     window.open(finalUrl, '_blank');
   }
 
+  cancelRequest() {
+    requestManager.abort();
+    this.setLoading(false);
+  }
+
   async sendRequest() {
     const url = document.getElementById('requestUrl').value.trim();
     if (!url) {
@@ -324,22 +331,31 @@ class App {
       }
     }
 
-    const result = await requestManager.send({
-      method: this.currentRequest.method,
-      url: url,
-      headers: this.currentRequest.headers,
-      params: this.currentRequest.params,
-      bodyType: this.currentRequest.bodyType,
-      body: body,
-      formData: this.currentRequest.formData,
-      collectionId: this.currentRequest.collectionId,
-      collectionName: collectionName,
-      requestName: this.currentRequest.name
-    });
+    try {
+      const result = await requestManager.send({
+        method: this.currentRequest.method,
+        url: url,
+        headers: this.currentRequest.headers,
+        params: this.currentRequest.params,
+        bodyType: this.currentRequest.bodyType,
+        body: body,
+        formData: this.currentRequest.formData,
+        collectionId: this.currentRequest.collectionId,
+        collectionName: collectionName,
+        requestName: this.currentRequest.name
+      });
 
-    this.setLoading(false);
-    this.displayResponse(result);
-    this.renderHistory();
+      this.setLoading(false);
+      this.displayResponse(result);
+      this.renderHistory();
+    } catch (error) {
+      this.setLoading(false);
+      this.displayResponse({
+        success: false,
+        error: error.message || 'Unknown error',
+        duration: 0
+      });
+    }
   }
 
   getBodyForCurrentType() {
@@ -359,19 +375,15 @@ class App {
 
   setLoading(loading) {
     this.isLoading = loading;
-    const btn = document.getElementById('sendBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
     
     if (loading) {
-      btn.innerHTML = '<span>Sending...</span>';
-      btn.classList.add('loading');
+      sendBtn.style.display = 'none';
+      cancelBtn.style.display = 'inline-flex';
     } else {
-      btn.innerHTML = `
-        <span>Send</span>
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-          <path d="M2 8l12-6-4 6 4 6z"/>
-        </svg>
-      `;
-      btn.classList.remove('loading');
+      sendBtn.style.display = 'inline-flex';
+      cancelBtn.style.display = 'none';
     }
   }
 
@@ -1155,6 +1167,10 @@ class App {
       option.textContent = env.name;
       select.appendChild(option);
     });
+  }
+
+  openSettingsModal() {
+    document.getElementById('settingsModal').classList.add('active');
   }
 
   openCreateCollectionModal() {

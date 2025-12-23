@@ -115,6 +115,12 @@ html, body {
   letter-spacing: -0.02em;
 }
 
+.header-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
 .sidebar-nav {
   display: flex;
   padding: 8px;
@@ -832,6 +838,19 @@ html, body {
 .btn.btn-update svg {
   color: #000;
   stroke: #000;
+}
+
+.btn-danger {
+  background: var(--error);
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c92a2a;
+}
+
+.btn-cancel {
+  display: none;
 }
 
 .btn-secondary {
@@ -1590,5 +1609,32 @@ html, body {
 .notification.show {
   transform: translateY(0);
   opacity: 1;
+}
+
+/* Settings Modal */
+.settings-section {
+  margin-bottom: 24px;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: flex-start;
 }
 

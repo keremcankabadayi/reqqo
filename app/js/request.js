@@ -96,6 +96,10 @@ class RequestManager {
 
     this.abortController = new AbortController();
     const startTime = performance.now();
+    
+    const timeoutId = setTimeout(() => {
+      this.abortController.abort();
+    }, 30000);
 
     try {
       const finalUrl = this.buildUrl(
@@ -121,6 +125,7 @@ class RequestManager {
       }
 
       const response = await fetch(finalUrl, fetchOptions);
+      clearTimeout(timeoutId);
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
 
@@ -177,13 +182,15 @@ class RequestManager {
       return result;
 
     } catch (error) {
+      clearTimeout(timeoutId);
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
 
       if (error.name === 'AbortError') {
+        const message = duration >= 30000 ? 'Request timeout (30s)' : 'Request was cancelled';
         return {
           success: false,
-          error: 'Request was cancelled',
+          error: message,
           duration
         };
       }

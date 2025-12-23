@@ -17,11 +17,19 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <h1 class="logo">Reqqo</h1>
-        <button class="btn-icon" id="newRequestBtn" title="New Request">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-          </svg>
-        </button>
+        <div class="header-actions">
+          <button class="btn-icon" id="newRequestBtn" title="New Request">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+          <button class="btn-icon" id="settingsBtn" title="Settings">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="8" cy="8" r="2"/>
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.5 2.5l1.5 1.5M12 12l1.5 1.5M2.5 13.5l1.5-1.5M12 4l1.5-1.5"/>
+            </svg>
+          </button>
+        </div>
       </div>
       
       <nav class="sidebar-nav">
@@ -42,22 +50,6 @@
       
       <div class="sidebar-content">
         <div class="tab-content active" id="collectionsTab">
-          <div class="collections-toolbar">
-            <button class="btn btn-ghost btn-sm" id="importCollectionBtn" title="Import Collections">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M7 10V2M4 5l3-3 3 3"/>
-                <path d="M2 10v2h10v-2"/>
-              </svg>
-              Import
-            </button>
-            <button class="btn btn-ghost btn-sm" id="exportCollectionBtn" title="Export Collections">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M7 2v8M4 7l3 3 3-3"/>
-                <path d="M2 10v2h10v-2"/>
-              </svg>
-              Export
-            </button>
-          </div>
           <div class="collections-list" id="collectionsList">
             <div class="empty-state">
               <p>No collections yet</p>
@@ -114,6 +106,13 @@
             <span>Send</span>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
               <path d="M2 8l12-6-4 6 4 6z"/>
+            </svg>
+          </button>
+          <button class="btn btn-danger btn-cancel" id="cancelBtn" style="display: none;">
+            <span>Cancel</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="4" y1="4" x2="12" y2="12"/>
+              <line x1="12" y1="4" x2="4" y2="12"/>
             </svg>
           </button>
           <div class="save-dropdown" id="saveDropdown">
@@ -403,6 +402,38 @@
       <div class="modal-footer">
         <button class="btn btn-secondary modal-cancel">Cancel</button>
         <button class="btn btn-primary" id="confirmCreateCollection">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal" id="settingsModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="btn-icon modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="settings-section">
+          <h3>Collections</h3>
+          <div class="settings-group">
+            <button class="btn btn-secondary btn-block" id="importCollectionBtnSettings">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M7 10V2M4 5l3-3 3 3"/>
+                <path d="M2 10v2h10v-2"/>
+              </svg>
+              Import Collections
+            </button>
+            <button class="btn btn-secondary btn-block" id="exportCollectionBtnSettings">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M7 2v8M4 7l3 3 3-3"/>
+                <path d="M2 10v2h10v-2"/>
+              </svg>
+              Export Collections
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
