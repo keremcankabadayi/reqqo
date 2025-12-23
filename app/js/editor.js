@@ -6,7 +6,7 @@ function initEditors() {
   if (requestContainer && typeof JSONEditor !== 'undefined') {
     requestBodyEditor = new JSONEditor(requestContainer, {
       mode: 'code',
-      modes: ['code', 'tree', 'text'],
+      modes: ['code', 'tree'],
       search: false,
       mainMenuBar: true,
       navigationBar: true,
@@ -33,7 +33,7 @@ function initEditors() {
   if (responseContainer && typeof JSONEditor !== 'undefined') {
     responseBodyEditor = new JSONEditor(responseContainer, {
       mode: 'view',
-      modes: ['view', 'code', 'tree', 'text'],
+      modes: ['view', 'code', 'tree'],
       search: false,
       mainMenuBar: true,
       navigationBar: true,
@@ -95,7 +95,7 @@ function setResponseBody(value) {
           responseBodyEditor.setMode('view');
         } catch {
           responseBodyEditor.setText(value);
-          responseBodyEditor.setMode('text');
+          responseBodyEditor.setMode('code');
         }
       } else {
         responseBodyEditor.setText(value || '');
