@@ -1158,7 +1158,7 @@ class App {
           }
         }
       } else {
-        throw new Error('Unrecognized file format. Supported: Postman Collection, REST Client export');
+        throw new Error('Unrecognized file format. Supported: Postman Collection, Reqqo export');
       }
       
       this.renderCollections();

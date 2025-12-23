@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "REST Client",
+  "name": "Reqqo",
   "version": "1.0.0",
   "description": "Powerful REST API testing tool - Postman alternative for your browser",
   "action": {
@@ -9,7 +9,7 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     },
-    "default_title": "REST Client"
+    "default_title": "Reqqo"
   },
   "background": {
     "service_worker": "background.js"
