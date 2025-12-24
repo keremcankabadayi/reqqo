@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reqqo</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/tabs.css">
   <link rel="stylesheet" href="lib/jsoneditor.min.css?v=2">
   <link rel="stylesheet" href="css/editor.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -84,6 +85,42 @@
     
     <!-- Main Content -->
     <main class="main-content">
+      <!-- Tabs Container -->
+      <div class="tabs-container" id="tabsContainer">
+        <div class="tabs-list" id="tabsList"></div>
+        <button class="new-tab-btn" id="newTabBtn" title="New Tab"></button>
+      </div>
+
+      <!-- Context Menu -->
+      <div class="tab-context-menu" id="tabContextMenu">
+        <button class="tab-context-menu-item" id="contextEditName">
+          <span class="tab-context-menu-icon">✏️</span>
+          <span>İsmi Düzenle</span>
+        </button>
+        <button class="tab-context-menu-item" id="contextResetName" style="display: none;">
+          <span class="tab-context-menu-icon">↺</span>
+          <span>İsmi Sıfırla</span>
+        </button>
+        <div class="tab-context-menu-divider"></div>
+        <button class="tab-context-menu-item" id="contextDuplicate">
+          <span class="tab-context-menu-icon">⎘</span>
+          <span>Tab'ı Çoğalt</span>
+        </button>
+        <div class="tab-context-menu-divider"></div>
+        <button class="tab-context-menu-item" id="contextClose">
+          <span class="tab-context-menu-icon">×</span>
+          <span>Tab'ı Kapat</span>
+        </button>
+        <button class="tab-context-menu-item" id="contextCloseOthers">
+          <span class="tab-context-menu-icon">⊗</span>
+          <span>Diğerlerini Kapat</span>
+        </button>
+        <button class="tab-context-menu-item danger" id="contextCloseAll">
+          <span class="tab-context-menu-icon">✕</span>
+          <span>Tümünü Kapat</span>
+        </button>
+      </div>
+      
       <!-- URL Bar -->
       <div class="url-bar">
           <select class="method-select" id="requestMethod">
@@ -450,6 +487,7 @@
   <script src="js/request.js"></script>
   <script src="js/history.js"></script>
   <script src="js/collections.js"></script>
+  <script src="js/tabs.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/app.js"></script>
 </body>

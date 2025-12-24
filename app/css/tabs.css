@@ -1,0 +1,354 @@
+/* Tab Container */
+.tabs-container {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  overflow-y: auto;
+  max-height: 120px;
+  padding: 4px 8px;
+  gap: 4px;
+  position: relative;
+}
+
+.tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tabs-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tabs-container::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 2px;
+}
+
+.tabs-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Tab Items Wrapper */
+.tabs-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Tab Item */
+.tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  min-width: 120px;
+  max-width: 200px;
+  height: 32px;
+  position: relative;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tab-item:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-secondary);
+}
+
+.tab-item.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.tab-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.tab-item.drag-over {
+  border-left: 2px solid var(--accent-primary);
+}
+
+/* Tab Name */
+.tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.tab-item.dirty .tab-name::before {
+  content: '● ';
+  color: var(--warning);
+  margin-right: 2px;
+}
+
+/* Tab Name Input (Edit Mode) */
+.tab-name-input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--accent-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 2px 6px;
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.tab-name-input:focus {
+  box-shadow: 0 0 0 2px var(--accent-muted);
+}
+
+/* Tab Buttons */
+.tab-edit-btn,
+.tab-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.tab-item:hover .tab-edit-btn,
+.tab-item:hover .tab-close-btn {
+  display: flex;
+}
+
+.tab-item.active .tab-edit-btn,
+.tab-item.active .tab-close-btn {
+  display: flex;
+}
+
+.tab-edit-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.tab-close-btn:hover {
+  background: var(--error-muted);
+  color: var(--text-primary);
+}
+
+.tab-edit-btn svg,
+.tab-close-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Tab Edit Button Text */
+.tab-edit-btn::before {
+  content: '✏️';
+  font-size: 11px;
+}
+
+.tab-close-btn::before {
+  content: '×';
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* New Tab Button */
+.new-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border-primary);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.new-tab-btn:hover {
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.new-tab-btn::before {
+  content: '+';
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* Context Menu */
+.tab-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  min-width: 180px;
+  display: none;
+}
+
+.tab-context-menu.show {
+  display: block;
+}
+
+.tab-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  width: 100%;
+}
+
+.tab-context-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+}
+
+.tab-context-menu-item.danger:hover {
+  background: var(--error-muted);
+  color: var(--text-primary);
+}
+
+.tab-context-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tab-context-menu-item:disabled:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.tab-context-menu-divider {
+  height: 1px;
+  background: var(--border-primary);
+  margin: 4px 0;
+}
+
+.tab-context-menu-icon {
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* Tab Tooltip */
+.tab-item[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  pointer-events: none;
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* Editing State */
+.tab-item.editing {
+  background: var(--bg-primary);
+}
+
+.tab-item.editing .tab-name {
+  display: none;
+}
+
+.tab-item.editing .tab-name-input {
+  display: block;
+}
+
+.tab-item:not(.editing) .tab-name-input {
+  display: none;
+}
+
+.tab-item.editing .tab-edit-btn {
+  display: none;
+}
+
+/* Scroll Indicators - Disabled for multi-line */
+.tabs-container::before,
+.tabs-container::after {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .tab-item {
+    min-width: 100px;
+    max-width: 150px;
+    padding: 6px 8px;
+  }
+
+  .tab-name {
+    font-size: 12px;
+  }
+}
+
+/* Animation for new tabs */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tab-item.new {
+  animation: slideIn 0.2s ease;
+}
+
+/* Draggable cursor */
+.tab-item[draggable="true"] {
+  cursor: grab;
+}
+
+.tab-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+

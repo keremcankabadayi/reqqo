@@ -83,25 +83,75 @@ function getRequestBody() {
 }
 
 function setResponseBody(value) {
-  if (responseBodyEditor) {
-    try {
-      if (typeof value === 'object') {
+  if (!responseBodyEditor) return;
+  
+  try {
+    // Clear the editor completely for empty values
+    if (value === null || value === undefined || value === '') {
+      try {
+        responseBodyEditor.set({});
+        responseBodyEditor.setMode('code');
+        responseBodyEditor.setText('');
+      } catch (e) {
+        // If set fails, just update the text content directly
+        const editorContent = responseBodyEditor.aceEditor || responseBodyEditor;
+        if (editorContent && editorContent.setValue) {
+          editorContent.setValue('');
+        }
+      }
+      return;
+    }
+
+    if (typeof value === 'object') {
+      try {
         responseBodyEditor.set(value);
         responseBodyEditor.setMode('view');
-      } else if (typeof value === 'string' && value.trim()) {
+      } catch (e) {
+        responseBodyEditor.setText(JSON.stringify(value, null, 2));
+        responseBodyEditor.setMode('code');
+      }
+    } else if (typeof value === 'string') {
+      const trimmedValue = value.trim();
+      
+      if (trimmedValue === '') {
         try {
-          const json = JSON.parse(value);
+          responseBodyEditor.set({});
+          responseBodyEditor.setMode('code');
+          responseBodyEditor.setText('');
+        } catch (e) {
+          const editorContent = responseBodyEditor.aceEditor || responseBodyEditor;
+          if (editorContent && editorContent.setValue) {
+            editorContent.setValue('');
+          }
+        }
+        return;
+      }
+
+      if (trimmedValue.startsWith('{') || trimmedValue.startsWith('[')) {
+        try {
+          const json = JSON.parse(trimmedValue);
           responseBodyEditor.set(json);
           responseBodyEditor.setMode('view');
-        } catch {
-          responseBodyEditor.setText(value);
-          responseBodyEditor.setMode('code');
+          return;
+        } catch (e) {
+          console.log('Not valid JSON, displaying as text');
         }
-      } else {
-        responseBodyEditor.setText(value || '');
       }
-    } catch (e) {
-      responseBodyEditor.setText(String(value) || '');
+      
+      responseBodyEditor.setText(value);
+      responseBodyEditor.setMode('code');
+    } else {
+      responseBodyEditor.setText(String(value));
+      responseBodyEditor.setMode('code');
+    }
+  } catch (e) {
+    console.error('Error setting response body:', e);
+    // Last resort: try to set empty object
+    try {
+      responseBodyEditor.set({});
+      responseBodyEditor.setMode('code');
+    } catch (e2) {
+      console.error('Failed to clear response body:', e2);
     }
   }
 }
