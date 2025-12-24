@@ -785,7 +785,7 @@ html, body {
 
 .url-input {
   flex: 1;
-  padding: 10px 40px 10px 14px;
+  padding: 10px 70px 10px 14px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
@@ -807,7 +807,6 @@ html, body {
 
 .btn-icon-inline {
   position: absolute;
-  right: 8px;
   top: 50%;
   transform: translateY(-50%);
   width: 28px;
@@ -823,6 +822,14 @@ html, body {
   justify-content: center;
   transition: all 0.15s ease;
   opacity: 0.7;
+}
+
+.btn-icon-inline:nth-last-of-type(2) {
+  right: 40px;
+}
+
+.btn-icon-inline:last-of-type {
+  right: 8px;
 }
 
 .btn-icon-inline:hover {
@@ -1507,6 +1514,32 @@ html, body {
 
 .modal-content.modal-lg {
   max-width: 720px;
+}
+
+.modal-content.modal-large {
+  max-width: 700px;
+  max-height: 80vh;
+}
+
+/* cURL Modal Styles */
+.curl-container {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.curl-command {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
 }
 
 @keyframes modalIn {

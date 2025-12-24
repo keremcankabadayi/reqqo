@@ -142,6 +142,8 @@ class App {
     });
 
     document.getElementById('openInTabBtn').addEventListener('click', () => this.openInNewTab());
+    document.getElementById('showCurlBtn').addEventListener('click', () => this.showCurlCommand());
+    document.getElementById('copyCurlBtn').addEventListener('click', () => this.copyCurlCommand());
 
     document.querySelectorAll('.nav-tab').forEach(tab => {
       tab.addEventListener('click', () => this.switchSidebarTab(tab.dataset.tab));
@@ -782,6 +784,97 @@ class App {
     );
     
     window.open(finalUrl, '_blank');
+  }
+
+  showCurlCommand() {
+    const url = document.getElementById('requestUrl').value.trim();
+    if (!url) {
+      alert('Please enter a URL');
+      return;
+    }
+
+    const curlCommand = this.generateCurlCommand();
+    document.getElementById('curlCommand').textContent = curlCommand;
+    document.getElementById('curlModal').classList.add('active');
+  }
+
+  generateCurlCommand() {
+    const method = this.currentRequest.method;
+    const url = document.getElementById('requestUrl').value.trim();
+    
+    const finalUrl = requestManager.buildUrl(
+      placeholderManager.replacePlaceholders(url),
+      this.currentRequest.params
+    );
+
+    let curl = `curl -X ${method}`;
+    
+    // Add headers
+    const enabledHeaders = this.currentRequest.headers.filter(h => h.enabled && h.key);
+    enabledHeaders.forEach(header => {
+      const key = placeholderManager.replacePlaceholders(header.key);
+      const value = placeholderManager.replacePlaceholders(header.value);
+      curl += ` \\\n  -H "${key}: ${value}"`;
+    });
+
+    // Add auth
+    const auth = authManager.getAuth();
+    if (auth && auth.type !== 'none') {
+      if (auth.type === 'basic' && auth.data.username) {
+        curl += ` \\\n  -u "${auth.data.username}:${auth.data.password || ''}"`;
+      } else if (auth.type === 'bearer' && auth.data.token) {
+        curl += ` \\\n  -H "Authorization: Bearer ${auth.data.token}"`;
+      }
+    }
+
+    // Add body
+    if (method !== 'GET' && method !== 'HEAD') {
+      if (this.currentRequest.bodyType === 'json') {
+        const body = typeof getRequestBody === 'function' ? getRequestBody() : this.currentRequest.body;
+        if (body && body.trim()) {
+          const escapedBody = body.replace(/"/g, '\\"').replace(/\n/g, '');
+          curl += ` \\\n  -d "${escapedBody}"`;
+        }
+      } else if (this.currentRequest.bodyType === 'raw') {
+        const rawBody = document.getElementById('rawBodyEditor')?.value || this.currentRequest.rawBody;
+        if (rawBody && rawBody.trim()) {
+          const escapedBody = rawBody.replace(/"/g, '\\"').replace(/\n/g, '');
+          curl += ` \\\n  -d "${escapedBody}"`;
+        }
+      } else if (this.currentRequest.bodyType === 'form-data') {
+        const enabledFormData = this.currentRequest.formData.filter(f => f.enabled && f.key);
+        enabledFormData.forEach(field => {
+          const key = placeholderManager.replacePlaceholders(field.key);
+          const value = placeholderManager.replacePlaceholders(field.value);
+          curl += ` \\\n  -F "${key}=${value}"`;
+        });
+      }
+    }
+
+    curl += ` \\\n  "${finalUrl}"`;
+
+    return curl;
+  }
+
+  async copyCurlCommand() {
+    const curlCommand = document.getElementById('curlCommand').textContent;
+    
+    try {
+      await navigator.clipboard.writeText(curlCommand);
+      const btn = document.getElementById('copyCurlBtn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 8 7 12 13 4"/>
+        </svg>
+        Copied!
+      `;
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 2000);
+    } catch (err) {
+      alert('Failed to copy to clipboard');
+    }
   }
 
   cancelRequest() {
