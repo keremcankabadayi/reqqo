@@ -807,7 +807,7 @@ class App {
       this.currentRequest.params
     );
 
-    let curl = `curl -X ${method}`;
+    let curl = `curl -X ${method} \\\n  "${finalUrl}"`;
     
     // Add headers
     const enabledHeaders = this.currentRequest.headers.filter(h => h.enabled && h.key);
@@ -827,31 +827,25 @@ class App {
       }
     }
 
-    // Add body
-    if (method !== 'GET' && method !== 'HEAD') {
-      if (this.currentRequest.bodyType === 'json') {
-        const body = typeof getRequestBody === 'function' ? getRequestBody() : this.currentRequest.body;
-        if (body && body.trim()) {
-          const escapedBody = body.replace(/"/g, '\\"').replace(/\n/g, '');
-          curl += ` \\\n  -d "${escapedBody}"`;
-        }
-      } else if (this.currentRequest.bodyType === 'raw') {
-        const rawBody = document.getElementById('rawBodyEditor')?.value || this.currentRequest.rawBody;
-        if (rawBody && rawBody.trim()) {
-          const escapedBody = rawBody.replace(/"/g, '\\"').replace(/\n/g, '');
-          curl += ` \\\n  -d "${escapedBody}"`;
-        }
-      } else if (this.currentRequest.bodyType === 'form-data') {
-        const enabledFormData = this.currentRequest.formData.filter(f => f.enabled && f.key);
-        enabledFormData.forEach(field => {
-          const key = placeholderManager.replacePlaceholders(field.key);
-          const value = placeholderManager.replacePlaceholders(field.value);
-          curl += ` \\\n  -F "${key}=${value}"`;
-        });
+    // Add body (including for GET requests, as some APIs like Elasticsearch support it)
+    if (this.currentRequest.bodyType === 'json') {
+      const body = typeof getRequestBody === 'function' ? getRequestBody() : this.currentRequest.body;
+      if (body && body.trim()) {
+        curl += ` \\\n  -d '${body}'`;
       }
+    } else if (this.currentRequest.bodyType === 'raw') {
+      const rawBody = document.getElementById('rawBodyEditor')?.value || this.currentRequest.rawBody;
+      if (rawBody && rawBody.trim()) {
+        curl += ` \\\n  -d '${rawBody}'`;
+      }
+    } else if (this.currentRequest.bodyType === 'form-data' && method !== 'GET' && method !== 'HEAD') {
+      const enabledFormData = this.currentRequest.formData.filter(f => f.enabled && f.key);
+      enabledFormData.forEach(field => {
+        const key = placeholderManager.replacePlaceholders(field.key);
+        const value = placeholderManager.replacePlaceholders(field.value);
+        curl += ` \\\n  -F "${key}=${value}"`;
+      });
     }
-
-    curl += ` \\\n  "${finalUrl}"`;
 
     return curl;
   }

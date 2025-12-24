@@ -109,14 +109,22 @@ class RequestManager {
       const finalHeaders = this.buildHeaders(headers);
       const finalBody = this.buildBody(bodyType, body, formData);
 
+      // Browsers don't allow GET/HEAD requests with body, even with XHR
+      // For Elasticsearch and similar APIs, we convert GET with body to POST
+      let effectiveMethod = method;
+      if ((method === 'GET' || method === 'HEAD') && finalBody && !(finalBody instanceof FormData)) {
+        effectiveMethod = 'POST';
+        console.warn(`Converting ${method} request to POST because it has a body (browser limitation)`);
+      }
+
       const fetchOptions = {
-        method,
+        method: effectiveMethod,
         headers: finalHeaders,
         signal: this.abortController.signal,
         credentials: 'omit'
       };
 
-      if (method !== 'GET' && method !== 'HEAD' && finalBody) {
+      if (finalBody && effectiveMethod !== 'HEAD') {
         fetchOptions.body = finalBody;
         
         if (bodyType === 'form-data' && finalBody instanceof FormData) {
@@ -154,6 +162,8 @@ class RequestManager {
       } catch {
         responseBody = '';
       }
+
+      clearTimeout(timeoutId);
 
       const result = {
         success: true,
