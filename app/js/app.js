@@ -141,6 +141,17 @@ class App {
       }
     });
 
+    document.getElementById('requestUrl').addEventListener('paste', async (e) => {
+      const pastedText = e.clipboardData.getData('text');
+      if (pastedText.trim().startsWith('curl')) {
+        e.preventDefault();
+        const parsed = this.parseCurlCommand(pastedText);
+        if (parsed) {
+          this.loadFromCurl(parsed);
+        }
+      }
+    });
+
     document.getElementById('openInTabBtn').addEventListener('click', () => this.openInNewTab());
     document.getElementById('showCurlBtn').addEventListener('click', () => this.showCurlCommand());
     document.getElementById('copyCurlBtn').addEventListener('click', () => this.copyCurlCommand());
@@ -2273,6 +2284,129 @@ class App {
     }
     
     return params;
+  }
+
+  parseCurlCommand(curlString) {
+    try {
+      const parsed = {
+        method: 'GET',
+        url: '',
+        headers: [],
+        body: null
+      };
+
+      // Normalize line breaks and spaces
+      let cleaned = curlString
+        .replace(/\\\r?\n/g, ' ')  // Remove line continuations
+        .replace(/\s+/g, ' ')      // Normalize spaces
+        .trim();
+      
+      // Remove 'curl' from start
+      cleaned = cleaned.replace(/^curl\s+/, '');
+
+      // Extract method
+      const methodMatch = cleaned.match(/(?:-X|--request)\s+(['"]?)(\w+)\1/);
+      if (methodMatch) {
+        parsed.method = methodMatch[2].toUpperCase();
+      }
+
+      // Extract headers
+      const headerRegex = /(?:-H|--header)\s+(['"])([^'"]+)\1/g;
+      let headerMatch;
+      while ((headerMatch = headerRegex.exec(curlString)) !== null) {
+        const headerValue = headerMatch[2];
+        const colonIndex = headerValue.indexOf(':');
+        if (colonIndex > 0) {
+          const key = headerValue.substring(0, colonIndex).trim();
+          const value = headerValue.substring(colonIndex + 1).trim();
+          parsed.headers.push({ enabled: true, key, value });
+        }
+      }
+
+      // Extract body - support multi-line bodies with single quotes or double quotes
+      let bodyMatch = curlString.match(/(?:-d|--data|--data-raw|--data-binary)\s+'([\s\S]*?)'/);
+      if (!bodyMatch) {
+        bodyMatch = curlString.match(/(?:-d|--data|--data-raw|--data-binary)\s+"([\s\S]*?)"/);
+      }
+      if (bodyMatch) {
+        parsed.body = bodyMatch[1].trim();
+      }
+
+      // Extract URL - try to find quoted URL first, then unquoted
+      let urlMatch = cleaned.match(/(['"])([^'"]+)\1/);
+      if (urlMatch) {
+        parsed.url = urlMatch[2];
+      } else {
+        // Try to extract URL by removing all flags and options
+        const urlCleaned = cleaned
+          .replace(/(?:-X|--request)\s+(['"]?)(\w+)\1/g, '')
+          .replace(/(?:-H|--header)\s+(['"])[^'"]+\1/g, '')
+          .replace(/(?:-d|--data|--data-raw|--data-binary)\s+(['"])([\s\S]*?)\1/g, '')
+          .replace(/(?:--compressed|--insecure|-k|-s|-S|-L|--location)/g, '')
+          .trim();
+        
+        const simpleUrlMatch = urlCleaned.match(/^(['"]?)([^\s'"]+)\1/);
+        if (simpleUrlMatch) {
+          parsed.url = simpleUrlMatch[2];
+        }
+      }
+
+      return parsed.url ? parsed : null;
+    } catch (error) {
+      console.error('Failed to parse curl command:', error);
+      return null;
+    }
+  }
+
+  loadFromCurl(parsed) {
+    // Set URL
+    document.getElementById('requestUrl').value = parsed.url;
+    this.currentRequest.url = parsed.url;
+
+    // Set method
+    this.currentRequest.method = parsed.method;
+    const methodSelect = document.getElementById('methodSelect');
+    if (methodSelect) {
+      methodSelect.value = parsed.method;
+    }
+    this.updateMethodColor();
+
+    // Set headers (add empty row for editing)
+    if (parsed.headers.length > 0) {
+      this.currentRequest.headers = [...parsed.headers, { enabled: true, key: '', value: '' }];
+      this.renderKeyValueRows('headersRows', this.currentRequest.headers);
+    }
+
+    // Extract and set params from URL
+    this.syncParamsFromUrl();
+
+    // Set body
+    if (parsed.body) {
+      this.currentRequest.bodyType = 'json';
+      this.currentRequest.body = parsed.body;
+      
+      // Select JSON radio and switch body type
+      const jsonRadio = document.querySelector('[name="bodyType"][value="json"]');
+      if (jsonRadio) {
+        jsonRadio.checked = true;
+        this.switchBodyType('json');
+      }
+
+      // Set body in editor with a small delay to ensure editor is ready
+      setTimeout(() => {
+        if (typeof setRequestBody === 'function') {
+          try {
+            const jsonObj = JSON.parse(parsed.body);
+            setRequestBody(jsonObj);
+          } catch {
+            setRequestBody(parsed.body);
+          }
+        }
+      }, 100);
+    }
+
+    this.markTabDirty();
+    this.showNotification('✓ Curl komutu yüklendi!');
   }
 
   showNotification(message) {
