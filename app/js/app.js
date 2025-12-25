@@ -2296,16 +2296,26 @@ class App {
       };
 
       // Normalize line breaks and spaces
-      let cleaned = curlString
+      const normalized = curlString
         .replace(/\\\r?\n/g, ' ')  // Remove line continuations
         .replace(/\s+/g, ' ')      // Normalize spaces
         .trim();
       
-      // Remove 'curl' from start
-      cleaned = cleaned.replace(/^curl\s+/, '');
+      // Extract URL first (before modifying the string)
+      // Look for quoted strings that look like URLs (start with http:// or https://)
+      const quotedUrlMatch = normalized.match(/(['"])(https?:\/\/[^'"]+)\1/);
+      if (quotedUrlMatch) {
+        parsed.url = quotedUrlMatch[2];
+      } else {
+        // Try to find unquoted URL
+        const unquotedUrlMatch = normalized.match(/(https?:\/\/[^\s'"]+)/);
+        if (unquotedUrlMatch) {
+          parsed.url = unquotedUrlMatch[1];
+        }
+      }
 
       // Extract method
-      const methodMatch = cleaned.match(/(?:-X|--request)\s+(['"]?)(\w+)\1/);
+      const methodMatch = normalized.match(/(?:-X|--request)\s+(['"]?)(\w+)\1/);
       if (methodMatch) {
         parsed.method = methodMatch[2].toUpperCase();
       }
@@ -2313,7 +2323,7 @@ class App {
       // Extract headers
       const headerRegex = /(?:-H|--header)\s+(['"])([^'"]+)\1/g;
       let headerMatch;
-      while ((headerMatch = headerRegex.exec(curlString)) !== null) {
+      while ((headerMatch = headerRegex.exec(normalized)) !== null) {
         const headerValue = headerMatch[2];
         const colonIndex = headerValue.indexOf(':');
         if (colonIndex > 0) {
@@ -2324,31 +2334,12 @@ class App {
       }
 
       // Extract body - support multi-line bodies with single quotes or double quotes
-      let bodyMatch = curlString.match(/(?:-d|--data|--data-raw|--data-binary)\s+'([\s\S]*?)'/);
+      let bodyMatch = normalized.match(/(?:-d|--data|--data-raw|--data-binary)\s+'([\s\S]*?)(?:'(?:\s|$))/);
       if (!bodyMatch) {
-        bodyMatch = curlString.match(/(?:-d|--data|--data-raw|--data-binary)\s+"([\s\S]*?)"/);
+        bodyMatch = normalized.match(/(?:-d|--data|--data-raw|--data-binary)\s+"([\s\S]*?)(?:"(?:\s|$))/);
       }
       if (bodyMatch) {
         parsed.body = bodyMatch[1].trim();
-      }
-
-      // Extract URL - try to find quoted URL first, then unquoted
-      let urlMatch = cleaned.match(/(['"])([^'"]+)\1/);
-      if (urlMatch) {
-        parsed.url = urlMatch[2];
-      } else {
-        // Try to extract URL by removing all flags and options
-        const urlCleaned = cleaned
-          .replace(/(?:-X|--request)\s+(['"]?)(\w+)\1/g, '')
-          .replace(/(?:-H|--header)\s+(['"])[^'"]+\1/g, '')
-          .replace(/(?:-d|--data|--data-raw|--data-binary)\s+(['"])([\s\S]*?)\1/g, '')
-          .replace(/(?:--compressed|--insecure|-k|-s|-S|-L|--location)/g, '')
-          .trim();
-        
-        const simpleUrlMatch = urlCleaned.match(/^(['"]?)([^\s'"]+)\1/);
-        if (simpleUrlMatch) {
-          parsed.url = simpleUrlMatch[2];
-        }
       }
 
       return parsed.url ? parsed : null;
@@ -2365,7 +2356,7 @@ class App {
 
     // Set method
     this.currentRequest.method = parsed.method;
-    const methodSelect = document.getElementById('methodSelect');
+    const methodSelect = document.getElementById('requestMethod');
     if (methodSelect) {
       methodSelect.value = parsed.method;
     }
