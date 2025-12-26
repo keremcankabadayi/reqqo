@@ -356,3 +356,9 @@
 }
 
 /* Search disabled */
+
+/* Search Box Frame Fix */
+.jsoneditor-frame {
+  background: transparent !important;
+  background-color: transparent !important;
+}

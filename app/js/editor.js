@@ -7,7 +7,7 @@ function initEditors() {
     requestBodyEditor = new JSONEditor(requestContainer, {
       mode: 'code',
       modes: ['code', 'tree'],
-      search: false,
+      search: true,
       mainMenuBar: true,
       navigationBar: true,
       statusBar: true,
@@ -34,7 +34,7 @@ function initEditors() {
     responseBodyEditor = new JSONEditor(responseContainer, {
       mode: 'view',
       modes: ['view', 'code', 'tree'],
-      search: false,
+      search: true,
       mainMenuBar: true,
       navigationBar: true,
       statusBar: true,
@@ -47,6 +47,13 @@ function initEditors() {
     responseBodyEditor.setText('Send a request to see the response');
   }
   
+  // Fix search box frame background
+  setTimeout(() => {
+    const frames = document.querySelectorAll('.jsoneditor-frame');
+    frames.forEach(frame => {
+      frame.style.backgroundColor = 'transparent';
+    });
+  }, 100);
 }
 
 // Helper functions for external access
