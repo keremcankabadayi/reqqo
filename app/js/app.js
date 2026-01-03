@@ -1063,29 +1063,31 @@ class App {
   updateUrlWithParams(url, params) {
     if (!url) return url;
     
-    let updatedUrl = url;
     const enabledParams = params.filter(p => p.enabled && p.key && p.key.trim());
+    const pathParamNames = this.extractUrlParameters(url);
     
-    const urlParamNames = this.extractUrlParameters(url);
+    let baseUrl = this.getBaseUrlWithoutQuery(url);
+    
+    const pathParamPattern = /\{([^}]+)\}/g;
+    const originalPathPart = url.split('?')[0];
+    baseUrl = originalPathPart;
+    
+    const queryParams = [];
     
     for (const param of enabledParams) {
       const paramKey = param.key.trim();
       
-      if (!urlParamNames.includes(paramKey)) {
-        const separator = updatedUrl.includes('?') ? '&' : '?';
-        updatedUrl += `${separator}${paramKey}={${paramKey}}`;
+      if (pathParamNames.includes(paramKey)) {
+        continue;
       }
+      
+      const value = param.value || '';
+      queryParams.push(`${encodeURIComponent(paramKey)}=${encodeURIComponent(value)}`);
     }
     
-    const currentUrlParams = this.extractUrlParameters(updatedUrl);
-    for (const urlParam of currentUrlParams) {
-      const existsInParams = enabledParams.some(p => p.key.trim() === urlParam);
-      if (!existsInParams) {
-        updatedUrl = updatedUrl.replace(new RegExp(`[?&]?${urlParam}=\\{${urlParam}\\}&?`, 'g'), '');
-        updatedUrl = updatedUrl.replace(new RegExp(`\\{${urlParam}\\}`, 'g'), '');
-        updatedUrl = updatedUrl.replace(/\?&/, '?').replace(/&&/, '&');
-        updatedUrl = updatedUrl.replace(/[?&]$/, '');
-      }
+    let updatedUrl = baseUrl;
+    if (queryParams.length > 0) {
+      updatedUrl += '?' + queryParams.join('&');
     }
     
     return updatedUrl;
