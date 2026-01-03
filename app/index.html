@@ -19,11 +19,27 @@
       <div class="sidebar-header">
         <h1 class="logo">Reqqo</h1>
         <div class="header-actions">
-          <button class="btn-icon" id="newRequestBtn" title="New Request">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
+          <div class="dropdown" id="newDropdown">
+            <button class="btn-icon" id="newRequestBtn" title="New">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <div class="dropdown-menu" id="newDropdownMenu">
+              <button class="dropdown-item" id="newRequestOption">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 3h12M2 8h12M2 13h8"/>
+                </svg>
+                New Request
+              </button>
+              <button class="dropdown-item" id="newCollectionOption">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M2 4h12v10H2zM2 4l2-2h8l2 2"/>
+                </svg>
+                New Collection
+              </button>
+            </div>
+          </div>
           <button class="btn-icon" id="settingsBtn" title="Settings">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2">
               <circle cx="8" cy="8" r="2"/>

@@ -122,7 +122,27 @@ class App {
         this.closeSaveDropdown();
       }
     });
-    document.getElementById('newRequestBtn').addEventListener('click', () => this.newRequest());
+    document.getElementById('newRequestBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleNewDropdown();
+    });
+    
+    document.getElementById('newRequestOption').addEventListener('click', () => {
+      this.closeNewDropdown();
+      this.newRequest();
+    });
+    
+    document.getElementById('newCollectionOption').addEventListener('click', () => {
+      this.closeNewDropdown();
+      this.showNewCollectionModal();
+    });
+    
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('newDropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        this.closeNewDropdown();
+      }
+    });
     
     document.getElementById('requestMethod').addEventListener('change', (e) => {
       this.currentRequest.method = e.target.value;
@@ -1227,6 +1247,24 @@ class App {
   newRequest() {
     this.saveCurrentTabState();
     this.createNewTab();
+  }
+
+  toggleNewDropdown() {
+    const dropdown = document.getElementById('newDropdown');
+    dropdown.classList.toggle('open');
+  }
+
+  closeNewDropdown() {
+    const dropdown = document.getElementById('newDropdown');
+    dropdown.classList.remove('open');
+  }
+
+  showNewCollectionModal() {
+    const name = prompt('Enter collection name:');
+    if (name && name.trim()) {
+      collectionsManager.createCollection(name.trim());
+      this.renderCollections();
+    }
   }
 
   renderKeyValueRows(containerId, data) {
