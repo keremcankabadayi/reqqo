@@ -47,13 +47,85 @@ function initEditors() {
     responseBodyEditor.setText('Send a request to see the response');
   }
   
-  // Fix search box frame background
-  setTimeout(() => {
+  // Fix search box frame background and input styling
+  function fixSearchInputStyles() {
+    const inputs = document.querySelectorAll('.jsoneditor-frame input[type="text"], .jsoneditor-search input, .jsoneditor-frame input, .jsoneditor-search input[type="text"]');
+    
+    inputs.forEach(input => {
+      // Break the color inheritance chain - start from input itself and go up
+      let el = input;
+      while (el && el !== document.body) {
+        el.style.setProperty('color', 'inherit', 'important');
+        el.style.setProperty('-webkit-text-fill-color', 'inherit', 'important');
+        el.style.setProperty('filter', 'none', 'important');
+        el.style.setProperty('mix-blend-mode', 'normal', 'important');
+        el = el.parentElement;
+      }
+      
+      // Now set the input's own color to black
+      input.style.setProperty('color', 'black', 'important');
+      input.style.setProperty('-webkit-text-fill-color', 'black', 'important');
+      input.style.setProperty('background', 'white', 'important');
+      input.style.setProperty('background-color', 'white', 'important');
+      input.style.setProperty('caret-color', 'black', 'important');
+      input.style.setProperty('border', '1px solid #ccc', 'important');
+      input.style.setProperty('padding', '6px 8px', 'important');
+      input.style.setProperty('font-size', '14px', 'important');
+      input.style.setProperty('font-family', 'Arial, sans-serif', 'important');
+      input.style.setProperty('width', '180px', 'important');
+      input.style.setProperty('height', '28px', 'important');
+      input.style.setProperty('box-sizing', 'border-box', 'important');
+      input.style.setProperty('opacity', '1', 'important');
+      input.style.setProperty('visibility', 'visible', 'important');
+      
+      if (!input.dataset.listenerAttached) {
+        const forceBlackText = function() {
+          // Re-apply the fix on every interaction
+          let el = input;
+          while (el && el !== document.body) {
+            el.style.setProperty('color', 'inherit', 'important');
+            el.style.setProperty('-webkit-text-fill-color', 'inherit', 'important');
+            el.style.setProperty('filter', 'none', 'important');
+            el.style.setProperty('mix-blend-mode', 'normal', 'important');
+            el = el.parentElement;
+          }
+          input.style.setProperty('color', 'black', 'important');
+          input.style.setProperty('-webkit-text-fill-color', 'black', 'important');
+          input.style.setProperty('caret-color', 'black', 'important');
+          input.style.setProperty('background-color', 'white', 'important');
+        };
+        
+        input.addEventListener('input', forceBlackText);
+        input.addEventListener('focus', forceBlackText);
+        input.addEventListener('keydown', forceBlackText);
+        input.addEventListener('keyup', forceBlackText);
+        input.addEventListener('keypress', forceBlackText);
+        input.addEventListener('change', forceBlackText);
+        input.addEventListener('blur', forceBlackText);
+        
+        input.dataset.listenerAttached = 'true';
+      }
+    });
+    
     const frames = document.querySelectorAll('.jsoneditor-frame');
     frames.forEach(frame => {
-      frame.style.backgroundColor = 'transparent';
+      frame.style.setProperty('background-color', 'transparent', 'important');
     });
-  }, 100);
+  }
+  
+  setTimeout(fixSearchInputStyles, 100);
+  setTimeout(fixSearchInputStyles, 500);
+  setTimeout(fixSearchInputStyles, 1000);
+  
+  // Continuous check
+  setInterval(fixSearchInputStyles, 2000);
+  
+  // Observer for dynamic changes
+  const observer = new MutationObserver(fixSearchInputStyles);
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 }
 
 // Helper functions for external access
