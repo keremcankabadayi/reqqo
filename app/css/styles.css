@@ -1177,6 +1177,14 @@ html, body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  align-items: center;
+}
+
+.kv-header input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
 }
 
 .kv-rows {

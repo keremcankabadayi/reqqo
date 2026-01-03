@@ -243,6 +243,14 @@ class App {
 
     this.bindKeyValueEvents('paramsRows');
     this.bindKeyValueEvents('headersRows');
+    
+    document.getElementById('selectAllParams')?.addEventListener('change', (e) => {
+      this.toggleAllRows('paramsRows', 'params', e.target.checked);
+    });
+    
+    document.getElementById('selectAllHeaders')?.addEventListener('change', (e) => {
+      this.toggleAllRows('headersRows', 'headers', e.target.checked);
+    });
 
     document.getElementById('createCollectionBtn').addEventListener('click', () => this.openCreateCollectionModal());
     document.getElementById('confirmCreateCollection').addEventListener('click', () => this.createCollection());
@@ -764,6 +772,8 @@ class App {
 
   bindKeyValueEvents(containerId) {
     const container = document.getElementById(containerId);
+    const selectAllId = containerId === 'paramsRows' ? 'selectAllParams' : 
+                        containerId === 'headersRows' ? 'selectAllHeaders' : null;
     
     container.addEventListener('input', (e) => {
       if (e.target.classList.contains('kv-key') || e.target.classList.contains('kv-value')) {
@@ -774,6 +784,9 @@ class App {
     container.addEventListener('change', (e) => {
       if (e.target.type === 'checkbox') {
         this.syncKeyValueData(containerId);
+        if (selectAllId) {
+          this.updateSelectAllCheckbox(containerId, selectAllId);
+        }
       }
     });
 
@@ -781,6 +794,9 @@ class App {
       if (e.target.classList.contains('btn-delete')) {
         e.target.closest('.kv-row').remove();
         this.syncKeyValueData(containerId);
+        if (selectAllId) {
+          this.updateSelectAllCheckbox(containerId, selectAllId);
+        }
       }
     });
   }
@@ -820,6 +836,36 @@ class App {
       <button class="btn-icon btn-delete">×</button>
     `;
     container.appendChild(row);
+  }
+
+  toggleAllRows(containerId, dataKey, checked) {
+    const container = document.getElementById(containerId);
+    const checkboxes = container.querySelectorAll('.kv-row input[type="checkbox"]');
+    
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = checked;
+    });
+    
+    if (this.currentRequest[dataKey]) {
+      this.currentRequest[dataKey].forEach(item => {
+        item.enabled = checked;
+      });
+    }
+    
+    this.markTabDirty();
+  }
+
+  updateSelectAllCheckbox(containerId, selectAllId) {
+    const container = document.getElementById(containerId);
+    const selectAll = document.getElementById(selectAllId);
+    if (!container || !selectAll) return;
+    
+    const checkboxes = container.querySelectorAll('.kv-row input[type="checkbox"]');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    const someChecked = Array.from(checkboxes).some(cb => cb.checked);
+    
+    selectAll.checked = allChecked;
+    selectAll.indeterminate = someChecked && !allChecked;
   }
 
   openInNewTab() {
