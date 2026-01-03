@@ -135,6 +135,10 @@ class App {
       this.markTabDirty();
     });
 
+    document.getElementById('requestUrl').addEventListener('blur', (e) => {
+      this.syncParamsFromUrl();
+    });
+
     document.getElementById('requestUrl').addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         this.sendRequest();
@@ -149,6 +153,11 @@ class App {
         if (parsed) {
           this.loadFromCurl(parsed);
         }
+      } else {
+        setTimeout(() => {
+          this.currentRequest.url = document.getElementById('requestUrl').value;
+          this.syncParamsFromUrl();
+        }, 10);
       }
     });
 
@@ -1082,31 +1091,82 @@ class App {
     return updatedUrl;
   }
 
+  extractQueryParams(url) {
+    const queryParams = [];
+    try {
+      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      urlObj.searchParams.forEach((value, key) => {
+        queryParams.push({ key, value });
+      });
+    } catch (e) {
+      const queryMatch = url.match(/\?(.+?)(?:#|$)/);
+      if (queryMatch) {
+        const queryString = queryMatch[1];
+        queryString.split('&').forEach(pair => {
+          const [key, ...valueParts] = pair.split('=');
+          const value = valueParts.join('=');
+          if (key) {
+            queryParams.push({ 
+              key: decodeURIComponent(key), 
+              value: value ? decodeURIComponent(value) : '' 
+            });
+          }
+        });
+      }
+    }
+    return queryParams;
+  }
+
+  getBaseUrlWithoutQuery(url) {
+    try {
+      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      return urlObj.origin + urlObj.pathname;
+    } catch (e) {
+      return url.split('?')[0];
+    }
+  }
+
   syncParamsFromUrl() {
     if (this.isSyncingParams) return;
     
     this.isSyncingUrl = true;
     
     const url = document.getElementById('requestUrl').value;
-    const urlParamNames = this.extractUrlParameters(url);
+    const pathParamNames = this.extractUrlParameters(url);
+    const queryParams = this.extractQueryParams(url);
     
     const currentParams = this.currentRequest.params.filter(p => p.key && p.key.trim());
-    const currentParamKeys = currentParams.map(p => p.key.trim());
+    
+    const urlParamKeys = new Set([
+      ...pathParamNames,
+      ...queryParams.map(qp => qp.key)
+    ]);
     
     const newParams = [];
+    const addedKeys = new Set();
     
-    for (const paramName of urlParamNames) {
+    for (const paramName of pathParamNames) {
       const existingParam = currentParams.find(p => p.key.trim() === paramName);
       if (existingParam) {
         newParams.push(existingParam);
       } else {
         newParams.push({ enabled: true, key: paramName, value: '' });
       }
+      addedKeys.add(paramName);
     }
     
-    for (const param of currentParams) {
-      if (!urlParamNames.includes(param.key.trim()) && param.key.trim()) {
-        newParams.push(param);
+    for (const qp of queryParams) {
+      if (!addedKeys.has(qp.key)) {
+        const existingParam = currentParams.find(p => p.key.trim() === qp.key);
+        if (existingParam) {
+          if (!existingParam.value && qp.value) {
+            existingParam.value = qp.value;
+          }
+          newParams.push(existingParam);
+        } else {
+          newParams.push({ enabled: true, key: qp.key, value: qp.value });
+        }
+        addedKeys.add(qp.key);
       }
     }
     
