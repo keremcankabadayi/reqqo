@@ -633,6 +633,45 @@ html, body {
   color: var(--error);
 }
 
+/* Drag Handle */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.request-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Drag & Drop States */
+.request-item.dragging {
+  opacity: 0.5;
+  background: var(--bg-tertiary);
+}
+
+.collection-header.drag-over {
+  background: var(--accent-muted);
+  border-radius: var(--radius-md);
+}
+
+.collection-requests.drag-over {
+  background: rgba(88, 166, 255, 0.1);
+  border-radius: var(--radius-md);
+  outline: 2px dashed var(--accent-primary);
+  outline-offset: -2px;
+}
+
 .collection-header {
   display: flex;
   align-items: center;

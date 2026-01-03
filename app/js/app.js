@@ -1859,11 +1859,59 @@ class App {
       });
 
       const requestsContainer = collectionEl.querySelector('.collection-requests');
+      
+      // Add drop zone events to collection
+      headerEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        headerEl.classList.add('drag-over');
+      });
+      
+      headerEl.addEventListener('dragleave', (e) => {
+        headerEl.classList.remove('drag-over');
+      });
+      
+      headerEl.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        headerEl.classList.remove('drag-over');
+        const requestId = e.dataTransfer.getData('text/plain');
+        if (requestId) {
+          await this.moveRequestToCollection(requestId, collection.id);
+        }
+      });
+      
+      requestsContainer.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        requestsContainer.classList.add('drag-over');
+      });
+      
+      requestsContainer.addEventListener('dragleave', (e) => {
+        if (!requestsContainer.contains(e.relatedTarget)) {
+          requestsContainer.classList.remove('drag-over');
+        }
+      });
+      
+      requestsContainer.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        requestsContainer.classList.remove('drag-over');
+        const requestId = e.dataTransfer.getData('text/plain');
+        if (requestId) {
+          await this.moveRequestToCollection(requestId, collection.id);
+        }
+      });
+      
       requests.forEach(req => {
         const reqEl = document.createElement('div');
         reqEl.className = 'request-item';
         reqEl.dataset.id = req.id;
+        reqEl.draggable = true;
         reqEl.innerHTML = `
+          <span class="drag-handle" title="Drag to move">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <circle cx="3" cy="2" r="1"/><circle cx="7" cy="2" r="1"/>
+              <circle cx="3" cy="5" r="1"/><circle cx="7" cy="5" r="1"/>
+              <circle cx="3" cy="8" r="1"/><circle cx="7" cy="8" r="1"/>
+            </svg>
+          </span>
           <span class="method-badge ${req.method.toLowerCase()}">${req.method}</span>
           <span class="request-name">${this.escapeHtml(req.name)}</span>
           <div class="request-actions">
@@ -1881,8 +1929,18 @@ class App {
           </div>
         `;
         
+        // Drag events
+        reqEl.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', req.id);
+          reqEl.classList.add('dragging');
+        });
+        
+        reqEl.addEventListener('dragend', (e) => {
+          reqEl.classList.remove('dragging');
+        });
+        
         reqEl.addEventListener('click', async (e) => {
-          if (!e.target.closest('.request-actions')) {
+          if (!e.target.closest('.request-actions') && !e.target.closest('.drag-handle')) {
             await this.loadRequestFromCollection(req);
           }
         });
@@ -1919,6 +1977,12 @@ class App {
   async duplicateRequest(requestId) {
     await collectionsManager.duplicateRequest(requestId);
     this.renderCollections();
+  }
+
+  async moveRequestToCollection(requestId, collectionId) {
+    await collectionsManager.moveRequestToCollection(requestId, collectionId);
+    this.renderCollections();
+    this.showNotification('Request moved successfully');
   }
 
   async deleteCollection(collectionId) {
