@@ -166,12 +166,23 @@ class App {
     });
 
     document.getElementById('requestUrl').addEventListener('paste', async (e) => {
-      const pastedText = e.clipboardData.getData('text');
-      if (pastedText.trim().startsWith('curl')) {
+      const pastedText = e.clipboardData.getData('text').trim();
+      
+      if (pastedText.startsWith('curl')) {
         e.preventDefault();
         const parsed = this.parseCurlCommand(pastedText);
         if (parsed) {
           this.loadFromCurl(parsed);
+        }
+      } else if (this.isSwaggerUrl(pastedText)) {
+        e.preventDefault();
+        const confirmed = confirm('Swagger/OpenAPI document detected!\n\nDo you want to import all endpoints as a new collection?');
+        if (confirmed) {
+          this.importSwaggerFromUrl(pastedText);
+        } else {
+          document.getElementById('requestUrl').value = pastedText;
+          this.currentRequest.url = pastedText;
+          this.syncParamsFromUrl();
         }
       } else {
         setTimeout(() => {
@@ -1267,6 +1278,249 @@ class App {
     }
   }
 
+  isSwaggerUrl(url) {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    const swaggerPatterns = [
+      'swagger.json',
+      'swagger.yaml',
+      'swagger.yml',
+      'openapi.json',
+      'openapi.yaml',
+      'openapi.yml',
+      'doc.json',
+      'docs.json',
+      'api-docs',
+      '/v2/api-docs',
+      '/v3/api-docs'
+    ];
+    return swaggerPatterns.some(pattern => lowerUrl.includes(pattern));
+  }
+
+  async importSwaggerFromUrl(url) {
+    try {
+      const response = await fetch(url.trim());
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const swaggerJson = await response.json();
+      const result = this.parseSwaggerJson(swaggerJson, url.trim());
+      
+      if (result.requests.length === 0) {
+        alert('No endpoints found in the Swagger document.');
+        return;
+      }
+      
+      const collectionName = result.title || this.extractHostFromUrl(url);
+      const collection = await collectionsManager.createCollection(collectionName);
+      
+      for (const request of result.requests) {
+        await collectionsManager.saveRequest(request, collection.id);
+      }
+      
+      this.renderCollections();
+      alert(`Successfully imported ${result.requests.length} endpoints into "${collectionName}" collection.`);
+      
+    } catch (error) {
+      console.error('Swagger import error:', error);
+      alert(`Failed to import Swagger:\n${error.message}`);
+    }
+  }
+
+  async showImportSwaggerModal() {
+    const url = prompt('Enter Swagger JSON URL:\n\nExample: https://api.example.com/swagger/doc.json');
+    if (!url || !url.trim()) return;
+    
+    try {
+      const response = await fetch(url.trim());
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const swaggerJson = await response.json();
+      const result = this.parseSwaggerJson(swaggerJson, url.trim());
+      
+      if (result.requests.length === 0) {
+        alert('No endpoints found in the Swagger document.');
+        return;
+      }
+      
+      const collectionName = result.title || this.extractHostFromUrl(url);
+      const collection = await collectionsManager.createCollection(collectionName);
+      
+      for (const request of result.requests) {
+        await collectionsManager.saveRequest(request, collection.id);
+      }
+      
+      this.renderCollections();
+      alert(`Successfully imported ${result.requests.length} endpoints into "${collectionName}" collection.`);
+      
+    } catch (error) {
+      console.error('Swagger import error:', error);
+      alert(`Failed to import Swagger:\n${error.message}`);
+    }
+  }
+
+  extractHostFromUrl(url) {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.hostname.split('.')[0] || 'Imported API';
+    } catch {
+      return 'Imported API';
+    }
+  }
+
+  parseSwaggerJson(swagger, sourceUrl) {
+    const requests = [];
+    let baseUrl = '';
+    let title = '';
+    
+    if (swagger.openapi && swagger.openapi.startsWith('3')) {
+      title = swagger.info?.title || '';
+      if (swagger.servers && swagger.servers.length > 0) {
+        baseUrl = swagger.servers[0].url || '';
+      }
+      if (!baseUrl) {
+        try {
+          const urlObj = new URL(sourceUrl);
+          baseUrl = urlObj.origin;
+        } catch {}
+      }
+      
+      if (swagger.paths) {
+        for (const [path, methods] of Object.entries(swagger.paths)) {
+          for (const [method, details] of Object.entries(methods)) {
+            if (['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method.toLowerCase())) {
+              const request = this.createRequestFromSwagger(method, path, details, baseUrl);
+              requests.push(request);
+            }
+          }
+        }
+      }
+    } else if (swagger.swagger && swagger.swagger.startsWith('2')) {
+      title = swagger.info?.title || '';
+      const scheme = swagger.schemes?.[0] || 'https';
+      const host = swagger.host || '';
+      const basePath = swagger.basePath || '';
+      baseUrl = host ? `${scheme}://${host}${basePath}` : '';
+      
+      if (!baseUrl) {
+        try {
+          const urlObj = new URL(sourceUrl);
+          baseUrl = urlObj.origin;
+        } catch {}
+      }
+      
+      if (swagger.paths) {
+        for (const [path, methods] of Object.entries(swagger.paths)) {
+          for (const [method, details] of Object.entries(methods)) {
+            if (['get', 'post', 'put', 'patch', 'delete', 'head', 'options'].includes(method.toLowerCase())) {
+              const request = this.createRequestFromSwagger(method, path, details, baseUrl);
+              requests.push(request);
+            }
+          }
+        }
+      }
+    }
+    
+    return { requests, title };
+  }
+
+  createRequestFromSwagger(method, path, details, baseUrl) {
+    const swaggerPath = path.replace(/\{([^}]+)\}/g, '{$1}');
+    const url = `${baseUrl}${swaggerPath}`.replace(/([^:])\/\//g, '$1/');
+    
+    const params = [];
+    const headers = [{ enabled: true, key: '', value: '' }];
+    let body = '';
+    let bodyType = 'none';
+    
+    if (details.parameters) {
+      for (const param of details.parameters) {
+        if (param.in === 'path' || param.in === 'query') {
+          params.push({
+            enabled: true,
+            key: param.name,
+            value: param.example || param.default || ''
+          });
+        } else if (param.in === 'header' && param.name.toLowerCase() !== 'authorization') {
+          headers.unshift({
+            enabled: true,
+            key: param.name,
+            value: param.example || param.default || ''
+          });
+        } else if (param.in === 'body' && param.schema) {
+          bodyType = 'json';
+          body = this.generateExampleFromSchema(param.schema);
+        }
+      }
+    }
+    
+    if (details.requestBody?.content) {
+      const jsonContent = details.requestBody.content['application/json'];
+      if (jsonContent?.schema) {
+        bodyType = 'json';
+        body = this.generateExampleFromSchema(jsonContent.schema);
+      }
+    }
+    
+    if (params.length === 0) {
+      params.push({ enabled: true, key: '', value: '' });
+    }
+    
+    const name = details.summary || details.operationId || `${method.toUpperCase()} ${path}`;
+    
+    return {
+      name: name.substring(0, 50),
+      method: method.toUpperCase(),
+      url,
+      params,
+      headers,
+      bodyType,
+      body
+    };
+  }
+
+  generateExampleFromSchema(schema) {
+    if (!schema) return '';
+    
+    if (schema.example) {
+      return JSON.stringify(schema.example, null, 2);
+    }
+    
+    if (schema.type === 'object' || schema.properties) {
+      const obj = {};
+      if (schema.properties) {
+        for (const [key, prop] of Object.entries(schema.properties)) {
+          obj[key] = this.getExampleValue(prop);
+        }
+      }
+      return JSON.stringify(obj, null, 2);
+    }
+    
+    if (schema.type === 'array' && schema.items) {
+      return JSON.stringify([this.getExampleValue(schema.items)], null, 2);
+    }
+    
+    return '';
+  }
+
+  getExampleValue(prop) {
+    if (prop.example !== undefined) return prop.example;
+    if (prop.default !== undefined) return prop.default;
+    
+    switch (prop.type) {
+      case 'string': return prop.format === 'date-time' ? '2024-01-01T00:00:00Z' : 'string';
+      case 'integer': return 0;
+      case 'number': return 0.0;
+      case 'boolean': return false;
+      case 'array': return [];
+      case 'object': return {};
+      default: return null;
+    }
+  }
+
   renderKeyValueRows(containerId, data) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
@@ -2248,8 +2502,24 @@ class App {
       let importedCollections = 0;
       let importedRequests = 0;
       
-      // Check if it's Postman format
-      if (data.info && data.item) {
+      // Check if it's Swagger/OpenAPI format
+      if (data.openapi || data.swagger) {
+        // Swagger/OpenAPI format
+        const result = this.parseSwaggerJson(data, file.name);
+        
+        if (result.requests.length === 0) {
+          throw new Error('No endpoints found in the Swagger document.');
+        }
+        
+        const collectionName = result.title || file.name.replace(/\.(json|yaml|yml)$/i, '');
+        const collection = await collectionsManager.createCollection(collectionName);
+        importedCollections++;
+        
+        for (const request of result.requests) {
+          await collectionsManager.saveRequest(request, collection.id);
+          importedRequests++;
+        }
+      } else if (data.info && data.item) {
         // Postman Collection v2.1.0 format
         const result = await this.importPostmanCollection(data);
         importedCollections = result.collections;
@@ -2275,7 +2545,7 @@ class App {
           }
         }
       } else {
-        throw new Error('Unrecognized file format. Supported: Postman Collection, Reqqo export');
+        throw new Error('Unrecognized file format. Supported: Swagger/OpenAPI, Postman Collection, Reqqo export');
       }
       
       this.renderCollections();
