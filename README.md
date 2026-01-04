@@ -2,7 +2,7 @@
 
 A powerful REST API testing tool for your browser. The perfect Postman alternative as a Chrome extension.
 
-![Reqqo Screenshot](screenshots/reqqo-preview.png)
+<img width="1919" height="959" alt="SCR-20260104-mjdo" src="https://github.com/user-attachments/assets/0daa02d0-f8bf-4d6c-a6b8-a85274603108" />
 
 ## Features
 
