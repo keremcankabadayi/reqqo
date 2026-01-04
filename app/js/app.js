@@ -1971,7 +1971,10 @@ class App {
         visibleCollectionIds.add(collectionId);
         getParentCollectionIds(group).forEach(id => visibleCollectionIds.add(id));
         if (nameMatches) {
-          getChildCollectionIds(group).forEach(id => visibleCollectionIds.add(id));
+          getChildCollectionIds(group).forEach(id => {
+            visibleCollectionIds.add(id);
+            collectionNameMatches.add(id);
+          });
         }
       }
     });
