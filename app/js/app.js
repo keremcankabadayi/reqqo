@@ -279,6 +279,9 @@ class App {
 
     document.getElementById('copyResponseBtn').addEventListener('click', () => this.copyResponse());
 
+    document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllCollections());
+    document.getElementById('collapseAllBtn').addEventListener('click', () => this.collapseAllCollections());
+
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-overlay').forEach(el => {
       el.addEventListener('click', () => this.closeModals());
     });
@@ -1323,11 +1326,11 @@ class App {
     dropdown.classList.remove('open');
   }
 
-  showNewCollectionModal() {
+  async showNewCollectionModal() {
     const name = prompt('Enter collection name:');
     if (name && name.trim()) {
-      collectionsManager.createCollection(name.trim());
-      this.renderCollections();
+      await collectionsManager.createCollection(name.trim());
+      await this.renderCollections();
     }
   }
 
@@ -1857,6 +1860,27 @@ class App {
       this.collapsedCollections.add(collectionId);
       collectionEl.classList.add('collapsed');
     }
+  }
+
+  async expandAllCollections() {
+    const allCollections = await collectionsManager.getAllCollections();
+    this.collapsedCollections.clear();
+    
+    document.querySelectorAll('.collection-group').forEach(el => {
+      el.classList.remove('collapsed');
+    });
+  }
+
+  async collapseAllCollections() {
+    const allCollections = await collectionsManager.getAllCollections();
+    
+    allCollections.forEach(collection => {
+      this.collapsedCollections.add(collection.id);
+    });
+    
+    document.querySelectorAll('.collection-group').forEach(el => {
+      el.classList.add('collapsed');
+    });
   }
 
   async renderCollections() {

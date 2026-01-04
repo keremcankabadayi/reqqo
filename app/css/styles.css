@@ -224,6 +224,41 @@ html, body {
   padding: 12px;
 }
 
+.collections-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0 0 8px 0;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.collections-toggle-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.btn-icon-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-icon-sm:hover {
+  background: var(--bg-hover);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
 .tab-content {
   display: none;
 }
