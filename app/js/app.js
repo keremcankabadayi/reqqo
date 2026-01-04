@@ -2080,21 +2080,36 @@ class App {
             const edgeZone = rect.height * 0.25;
             
             // Check if dropping on edges (reorder) or center (make subcollection)
-            if (relativeY < edgeZone || relativeY > rect.height - edgeZone) {
+            const isEdgeDrop = relativeY < edgeZone || relativeY > rect.height - edgeZone;
+            console.log('Collection drop:', { 
+              relativeY, 
+              edgeZone, 
+              rectHeight: rect.height,
+              isEdgeDrop,
+              draggedParent: draggedCollection.parentId,
+              targetParent: collection.parentId
+            });
+            
+            if (isEdgeDrop) {
               // Edge drop - reorder if same parent, otherwise move to same parent level
-              const sameParent = (draggedCollection.parentId || null) === (collection.parentId || null);
+              const draggedParent = draggedCollection.parentId || null;
+              const targetParent = collection.parentId || null;
+              const sameParent = draggedParent === targetParent;
+              
+              console.log('Edge drop - sameParent:', sameParent, { draggedParent, targetParent });
               
               if (sameParent) {
                 const position = relativeY < edgeZone ? 'before' : 'after';
+                console.log('Calling reorderCollection:', { draggedId: data.id, targetId: collection.id, position });
                 await collectionsManager.reorderCollection(data.id, collection.id, position);
-                this.renderCollections();
+                await this.renderCollections();
                 this.showNotification('Collection reordered');
               } else {
                 // Move to same parent level first, then reorder
                 await collectionsManager.updateCollectionParent(data.id, collection.parentId);
                 const position = relativeY < edgeZone ? 'before' : 'after';
                 await collectionsManager.reorderCollection(data.id, collection.id, position);
-                this.renderCollections();
+                await this.renderCollections();
                 this.showNotification('Collection moved');
               }
             } else {

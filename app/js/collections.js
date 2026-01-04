@@ -104,15 +104,25 @@ class CollectionsManager {
     const collection = await storage.get(STORES.COLLECTIONS, collectionId);
     const target = await storage.get(STORES.COLLECTIONS, targetCollectionId);
     
-    if (!collection || !target) return;
+    if (!collection || !target) {
+      console.error('reorderCollection: collection or target not found', { collectionId, targetCollectionId });
+      return;
+    }
     
-    // Only reorder within same parent level
-    if (collection.parentId !== target.parentId) return;
+    // Only reorder within same parent level (normalize null/undefined)
+    const collectionParent = collection.parentId || null;
+    const targetParent = target.parentId || null;
     
-    // Get all siblings
-    const siblings = collection.parentId 
-      ? await this.getChildCollections(collection.parentId)
-      : (await this.getAllCollections()).filter(c => !c.parentId);
+    if (collectionParent !== targetParent) {
+      console.log('reorderCollection: different parents, skipping', { collectionParent, targetParent });
+      return;
+    }
+    
+    // Get all siblings (normalize parentId check for root collections)
+    const allCollections = await this.getAllCollections();
+    const siblings = collectionParent 
+      ? allCollections.filter(c => c.parentId === collectionParent)
+      : allCollections.filter(c => !c.parentId);
     
     // Sort by current order
     siblings.sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -122,6 +132,11 @@ class CollectionsManager {
     
     // Find target index
     const targetIndex = filtered.findIndex(c => c.id === targetCollectionId);
+    
+    if (targetIndex === -1) {
+      console.error('reorderCollection: target not found in siblings', { targetCollectionId, siblings: filtered.map(c => c.id) });
+      return;
+    }
     
     // Insert at correct position
     const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
@@ -138,6 +153,8 @@ class CollectionsManager {
         this.collections[index] = col;
       }
     }
+    
+    console.log('reorderCollection: success', { collectionId, position, newOrder: collection.order });
     return collection;
   }
 
