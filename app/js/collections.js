@@ -8,9 +8,10 @@ class CollectionsManager {
     return this.collections.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async createCollection(name, customId = null) {
+  async createCollection(name, customId = null, parentId = null) {
     const collection = {
       name,
+      parentId: parentId,
       createdAt: Date.now()
     };
     
@@ -21,6 +22,16 @@ class CollectionsManager {
     const saved = await storage.add(STORES.COLLECTIONS, collection);
     this.collections.push(saved);
     return saved;
+  }
+
+  async getChildCollections(parentId) {
+    const all = await this.getAllCollections();
+    return all.filter(c => c.parentId === parentId);
+  }
+
+  async getRootCollections() {
+    const all = await this.getAllCollections();
+    return all.filter(c => !c.parentId).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getAllCollections() {
@@ -56,10 +67,30 @@ class CollectionsManager {
         this.collections[index] = collection;
       }
     }
+  }
+
+  async updateCollectionParent(id, newParentId) {
+    const collection = await storage.get(STORES.COLLECTIONS, id);
+    if (collection) {
+      collection.parentId = newParentId;
+      await storage.update(STORES.COLLECTIONS, collection);
+      
+      const index = this.collections.findIndex(c => c.id === id);
+      if (index !== -1) {
+        this.collections[index] = collection;
+      }
+    }
     return collection;
   }
 
   async deleteCollection(id) {
+    // First delete all child collections recursively
+    const children = await this.getChildCollections(id);
+    for (const child of children) {
+      await this.deleteCollection(child.id);
+    }
+    
+    // Delete all requests in this collection
     const requests = await this.getRequestsInCollection(id);
     for (const request of requests) {
       await storage.delete(STORES.REQUESTS, request.id);

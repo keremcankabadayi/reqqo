@@ -660,6 +660,22 @@ html, body {
   background: var(--bg-tertiary);
 }
 
+.collection-group.dragging {
+  opacity: 0.5;
+}
+
+.collection-group.dragging > .collection-header {
+  background: var(--bg-tertiary);
+}
+
+.collection-header[draggable="true"] {
+  cursor: grab;
+}
+
+.collection-header[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 .collection-header.drag-over {
   background: var(--accent-muted);
   border-radius: var(--radius-md);
@@ -670,6 +686,43 @@ html, body {
   border-radius: var(--radius-md);
   outline: 2px dashed var(--accent-primary);
   outline-offset: -2px;
+}
+
+/* Subcollection (nested folder) styles */
+.collection-group.depth-1,
+.collection-group.depth-2,
+.collection-group.depth-3 {
+  border-left: 2px solid var(--border-primary);
+  margin-left: 0 !important;
+  padding-left: 8px;
+  margin-top: 4px;
+}
+
+.collection-group.depth-1 > .collection-header,
+.collection-group.depth-2 > .collection-header,
+.collection-group.depth-3 > .collection-header {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.collection-group.depth-1 > .collection-header .badge,
+.collection-group.depth-2 > .collection-header .badge,
+.collection-group.depth-3 > .collection-header .badge {
+  font-size: 10px;
+  padding: 1px 4px;
+}
+
+.collection-group.depth-1 > .collection-requests > .request-item,
+.collection-group.depth-2 > .collection-requests > .request-item,
+.collection-group.depth-3 > .collection-requests > .request-item {
+  padding-left: 20px;
+}
+
+/* Subcollection folder icon */
+.collection-group.depth-1 > .collection-header > svg:nth-child(2),
+.collection-group.depth-2 > .collection-header > svg:nth-child(2),
+.collection-group.depth-3 > .collection-header > svg:nth-child(2) {
+  opacity: 0.7;
 }
 
 .collection-header {

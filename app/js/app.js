@@ -14,6 +14,7 @@ class App {
     };
     this.isLoading = false;
     this.collapsedCollections = new Set();
+    this.initialRenderDone = false;
     this.isSyncingUrl = false;
     this.isSyncingParams = false;
     this.syncUrlDebounceTimer = null;
@@ -135,6 +136,11 @@ class App {
     document.getElementById('newCollectionOption').addEventListener('click', () => {
       this.closeNewDropdown();
       this.showNewCollectionModal();
+    });
+    
+    document.getElementById('newSubcollectionOption').addEventListener('click', () => {
+      this.closeNewDropdown();
+      this.showNewSubcollectionModal();
     });
     
     document.addEventListener('click', (e) => {
@@ -1324,6 +1330,70 @@ class App {
     }
   }
 
+  async showNewSubcollectionModal() {
+    const collections = await collectionsManager.getAllCollections();
+    
+    if (collections.length === 0) {
+      alert('Please create a collection first before adding subcollections.');
+      return;
+    }
+    
+    // Build select options for parent collection
+    const options = collections.map(c => `<option value="${c.id}">${c.name}${c.parentId ? ' (sub)' : ''}</option>`).join('');
+    
+    const modalHtml = `
+      <div class="modal-overlay" id="subcollectionModal">
+        <div class="modal" style="width: 400px;">
+          <div class="modal-header">
+            <h3>New Subcollection</h3>
+            <button class="btn-icon modal-close" onclick="document.getElementById('subcollectionModal').remove()">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4l8 8M12 4l-8 8"/>
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body" style="padding: 16px;">
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="parentCollection" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Parent Collection</label>
+              <select id="parentCollection" style="width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-md); color: var(--text-primary);">
+                ${options}
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="subcollectionName" style="display: block; margin-bottom: 8px; color: var(--text-secondary);">Subcollection Name</label>
+              <input type="text" id="subcollectionName" placeholder="Enter name..." style="width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border-primary); border-radius: var(--radius-md); color: var(--text-primary);">
+            </div>
+          </div>
+          <div class="modal-footer" style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-primary);">
+            <button class="btn btn-secondary" onclick="document.getElementById('subcollectionModal').remove()">Cancel</button>
+            <button class="btn btn-primary" id="createSubcollectionBtn">Create</button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    document.getElementById('subcollectionName').focus();
+    
+    document.getElementById('createSubcollectionBtn').addEventListener('click', async () => {
+      const name = document.getElementById('subcollectionName').value.trim();
+      const parentId = document.getElementById('parentCollection').value;
+      
+      if (name) {
+        await collectionsManager.createCollection(name, null, parentId);
+        this.renderCollections();
+        document.getElementById('subcollectionModal').remove();
+      }
+    });
+    
+    document.getElementById('subcollectionName').addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('createSubcollectionBtn').click();
+      }
+    });
+  }
+
   isSwaggerUrl(url) {
     if (!url) return false;
     const lowerUrl = url.toLowerCase();
@@ -1786,9 +1856,9 @@ class App {
 
   async renderCollections() {
     const container = document.getElementById('collectionsList');
-    const collections = await collectionsManager.loadCollections();
+    const allCollections = await collectionsManager.loadCollections();
 
-    if (collections.length === 0) {
+    if (allCollections.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
           <p>No collections yet</p>
@@ -1800,31 +1870,58 @@ class App {
     }
 
     container.innerHTML = '';
-
-    for (const collection of collections) {
+    
+    // Build hierarchy map
+    const childrenMap = new Map();
+    const rootCollections = [];
+    
+    for (const collection of allCollections) {
+      if (!collection.parentId) {
+        rootCollections.push(collection);
+      } else {
+        if (!childrenMap.has(collection.parentId)) {
+          childrenMap.set(collection.parentId, []);
+        }
+        childrenMap.get(collection.parentId).push(collection);
+      }
+    }
+    
+    // Recursive function to render collection and its children
+    const renderCollectionItem = async (collection, depth = 0) => {
       const requests = await collectionsManager.getRequestsInCollection(collection.id);
       
-      if (!this.collapsedCollections.has(collection.id)) {
+      // On first render, collapse all collections by default
+      if (!this.initialRenderDone && !this.collapsedCollections.has(collection.id)) {
         this.collapsedCollections.add(collection.id);
       }
       
       const isCollapsed = this.collapsedCollections.has(collection.id);
       
       const collectionEl = document.createElement('div');
-      collectionEl.className = `collection-group ${isCollapsed ? 'collapsed' : ''}`;
+      collectionEl.className = `collection-group ${isCollapsed ? 'collapsed' : ''} depth-${depth}`;
+      collectionEl.style.marginLeft = `${depth * 16}px`;
+      
+      const childCount = (childrenMap.get(collection.id) || []).length;
+      const totalCount = requests.length + childCount;
+      
       collectionEl.innerHTML = `
-        <div class="collection-header" data-id="${collection.id}">
+        <div class="collection-header" data-id="${collection.id}" data-depth="${depth}">
           <button class="expand-toggle">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 5 6 8 9 5"/>
             </svg>
           </button>
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M2 3h10M2 7h10M2 11h10"/>
+            ${depth === 0 ? '<path d="M2 3h10M2 7h10M2 11h10"/>' : '<path d="M1 2h12v9H1zM1 2l2-1h8l2 1"/>'}
           </svg>
           <span class="collection-name">${this.escapeHtml(collection.name)}</span>
-          <span class="badge">${requests.length}</span>
+          <span class="badge">${totalCount}</span>
           <div class="collection-actions">
+            <button class="action-btn add-sub" title="Add Subcollection" data-collection-id="${collection.id}">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 3v6M3 6h6"/>
+              </svg>
+            </button>
             <button class="action-btn edit" title="Edit Collection" data-collection-id="${collection.id}">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M8.5 1.5l2 2M1 11l.5-2L9 1.5l2 2L3.5 11z"/>
@@ -1842,10 +1939,32 @@ class App {
 
       const headerEl = collectionEl.querySelector('.collection-header');
       
+      // Make collection draggable
+      headerEl.draggable = true;
+      
+      headerEl.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        e.dataTransfer.setData('application/json', JSON.stringify({
+          type: 'collection',
+          id: collection.id
+        }));
+        e.dataTransfer.effectAllowed = 'move';
+        collectionEl.classList.add('dragging');
+      });
+      
+      headerEl.addEventListener('dragend', () => {
+        collectionEl.classList.remove('dragging');
+      });
+      
       headerEl.addEventListener('click', (e) => {
         if (!e.target.closest('.collection-actions')) {
           this.toggleCollection(collection.id);
         }
+      });
+
+      collectionEl.querySelector('.action-btn.add-sub').addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.addSubcollection(collection.id);
       });
 
       collectionEl.querySelector('.action-btn.edit').addEventListener('click', (e) => {
@@ -1872,15 +1991,28 @@ class App {
       
       headerEl.addEventListener('drop', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         headerEl.classList.remove('drag-over');
-        const requestId = e.dataTransfer.getData('text/plain');
-        if (requestId) {
-          await this.moveRequestToCollection(requestId, collection.id);
+        
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('application/json'));
+          if (data.type === 'request') {
+            await this.moveRequestToCollection(data.id, collection.id);
+          } else if (data.type === 'collection' && data.id !== collection.id) {
+            await this.moveCollectionToParent(data.id, collection.id);
+          }
+        } catch (err) {
+          // Fallback for old format
+          const requestId = e.dataTransfer.getData('text/plain');
+          if (requestId) {
+            await this.moveRequestToCollection(requestId, collection.id);
+          }
         }
       });
       
       requestsContainer.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         requestsContainer.classList.add('drag-over');
       });
       
@@ -1892,10 +2024,22 @@ class App {
       
       requestsContainer.addEventListener('drop', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         requestsContainer.classList.remove('drag-over');
-        const requestId = e.dataTransfer.getData('text/plain');
-        if (requestId) {
-          await this.moveRequestToCollection(requestId, collection.id);
+        
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('application/json'));
+          if (data.type === 'request') {
+            await this.moveRequestToCollection(data.id, collection.id);
+          } else if (data.type === 'collection' && data.id !== collection.id) {
+            await this.moveCollectionToParent(data.id, collection.id);
+          }
+        } catch (err) {
+          // Fallback for old format
+          const requestId = e.dataTransfer.getData('text/plain');
+          if (requestId) {
+            await this.moveRequestToCollection(requestId, collection.id);
+          }
         }
       });
       
@@ -1931,11 +2075,16 @@ class App {
         
         // Drag events
         reqEl.addEventListener('dragstart', (e) => {
-          e.dataTransfer.setData('text/plain', req.id);
+          e.stopPropagation();
+          e.dataTransfer.setData('application/json', JSON.stringify({
+            type: 'request',
+            id: req.id
+          }));
+          e.dataTransfer.effectAllowed = 'move';
           reqEl.classList.add('dragging');
         });
         
-        reqEl.addEventListener('dragend', (e) => {
+        reqEl.addEventListener('dragend', () => {
           reqEl.classList.remove('dragging');
         });
         
@@ -1957,11 +2106,51 @@ class App {
 
         requestsContainer.appendChild(reqEl);
       });
+      
+      // Render child collections (subcollections) inside this collection
+      const children = childrenMap.get(collection.id) || [];
+      for (const child of children) {
+        const childEl = await renderCollectionItem(child, depth + 1);
+        if (childEl) {
+          requestsContainer.appendChild(childEl);
+        }
+      }
 
-      container.appendChild(collectionEl);
+      // Only append to main container if this is a root collection
+      if (depth === 0) {
+        container.appendChild(collectionEl);
+      }
+      
+      return collectionEl;
+    };
+    
+    // Render all root collections
+    for (const rootCollection of rootCollections) {
+      await renderCollectionItem(rootCollection, 0);
     }
 
+    // Add drop zone for moving collections to root
+    container.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    
+    container.addEventListener('drop', async (e) => {
+      // Only handle if dropped directly on container (not on a collection)
+      if (e.target === container || e.target.classList.contains('empty-state')) {
+        e.preventDefault();
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('application/json'));
+          if (data.type === 'collection') {
+            await this.moveCollectionToParent(data.id, null);
+          }
+        } catch (err) {
+          // Ignore
+        }
+      }
+    });
+    
     this.updateSaveRequestCollectionSelect();
+    this.initialRenderDone = true;
   }
 
   async deleteRequest(requestId) {
@@ -1985,6 +2174,32 @@ class App {
     this.showNotification('Request moved successfully');
   }
 
+  async moveCollectionToParent(collectionId, newParentId) {
+    // Prevent moving collection into itself or its children
+    if (collectionId === newParentId) {
+      return;
+    }
+    
+    // Check if newParentId is a descendant of collectionId (would create circular reference)
+    const isDescendant = async (parentId, checkId) => {
+      const children = await collectionsManager.getChildCollections(parentId);
+      for (const child of children) {
+        if (child.id === checkId) return true;
+        if (await isDescendant(child.id, checkId)) return true;
+      }
+      return false;
+    };
+    
+    if (await isDescendant(collectionId, newParentId)) {
+      this.showNotification('Cannot move collection into its own subcollection', 'error');
+      return;
+    }
+    
+    await collectionsManager.updateCollectionParent(collectionId, newParentId);
+    this.renderCollections();
+    this.showNotification('Collection moved successfully');
+  }
+
   async deleteCollection(collectionId) {
     if (confirm('Are you sure you want to delete this collection and all its requests?')) {
       await collectionsManager.deleteCollection(collectionId);
@@ -1996,6 +2211,14 @@ class App {
     const newName = prompt('Enter new collection name:', collection.name);
     if (newName && newName.trim() !== collection.name) {
       collectionsManager.updateCollection(collection.id, newName.trim());
+      this.renderCollections();
+    }
+  }
+
+  async addSubcollection(parentId) {
+    const name = prompt('Enter subcollection name:');
+    if (name && name.trim()) {
+      await collectionsManager.createCollection(name.trim(), null, parentId);
       this.renderCollections();
     }
   }
@@ -2413,12 +2636,38 @@ class App {
     const select = document.getElementById('saveRequestCollection');
     select.innerHTML = '<option value="">No Collection</option>';
     
+    // Build hierarchy
+    const childrenMap = new Map();
+    const rootCollections = [];
+    
     collectionsManager.collections.forEach(col => {
-      const option = document.createElement('option');
-      option.value = col.id;
-      option.textContent = col.name;
-      select.appendChild(option);
+      if (!col.parentId) {
+        rootCollections.push(col);
+      } else {
+        if (!childrenMap.has(col.parentId)) {
+          childrenMap.set(col.parentId, []);
+        }
+        childrenMap.get(col.parentId).push(col);
+      }
     });
+    
+    // Recursive function to add options with indentation
+    const addOptions = (collections, depth = 0) => {
+      collections.forEach(col => {
+        const option = document.createElement('option');
+        option.value = col.id;
+        option.textContent = '\u00A0\u00A0'.repeat(depth) + (depth > 0 ? '└ ' : '') + col.name;
+        select.appendChild(option);
+        
+        // Add children
+        const children = childrenMap.get(col.id) || [];
+        if (children.length > 0) {
+          addOptions(children, depth + 1);
+        }
+      });
+    };
+    
+    addOptions(rootCollections);
   }
 
   async saveRequest() {
@@ -2674,62 +2923,69 @@ class App {
     let importedCollections = 0;
     let importedRequests = 0;
     
-    // Process each folder/collection in Postman export
-    for (const folder of data.item) {
-      if (!folder.item || folder.item.length === 0) continue;
-      
-      // Create collection for folder
-      const collection = await collectionsManager.createCollection(folder.name);
-      importedCollections++;
-      
-      // Process requests in folder
-      for (const item of folder.item) {
-        if (!item.request) continue;
-        
-        const request = item.request;
-        
-        // Convert Postman headers to our format
-        const headers = (request.header || []).map(h => ({
-          enabled: true,
-          key: h.key,
-          value: h.value
-        }));
-        
-        // Add default Content-Type if not present
-        if (!headers.some(h => h.key.toLowerCase() === 'content-type')) {
-          headers.unshift({ enabled: true, key: 'Content-Type', value: 'application/json' });
-        }
-        
-        // Extract params from URL
-        const params = this.extractParamsFromUrl(request.url);
-        
-        // Get body
-        let body = '';
-        let bodyType = 'none';
-        if (request.body) {
-          if (request.body.mode === 'raw') {
-            body = request.body.raw || '';
-            bodyType = 'json';
-          } else if (request.body.mode === 'formdata') {
-            bodyType = 'form-data';
+    // Recursive function to process folders and subfolders
+    const processFolder = async (items, parentId = null) => {
+      for (const item of items) {
+        // Check if this is a folder (has items but no request)
+        if (item.item && !item.request) {
+          // Create collection/subcollection for folder
+          const collection = await collectionsManager.createCollection(item.name, null, parentId);
+          importedCollections++;
+          
+          // Recursively process items in this folder
+          await processFolder(item.item, collection.id);
+        } else if (item.request) {
+          // This is a request
+          const request = item.request;
+          
+          // Convert Postman headers to our format
+          const headers = (request.header || []).map(h => ({
+            enabled: true,
+            key: h.key,
+            value: h.value
+          }));
+          
+          // Add default Content-Type if not present
+          if (!headers.some(h => h.key.toLowerCase() === 'content-type')) {
+            headers.unshift({ enabled: true, key: 'Content-Type', value: 'application/json' });
+          }
+          
+          // Extract params from URL
+          const params = this.extractParamsFromUrl(request.url);
+          
+          // Get body
+          let body = '';
+          let bodyType = 'none';
+          if (request.body) {
+            if (request.body.mode === 'raw') {
+              body = request.body.raw || '';
+              bodyType = 'json';
+            } else if (request.body.mode === 'formdata') {
+              bodyType = 'form-data';
+            }
+          }
+          
+          // Save request to parent collection
+          if (parentId) {
+            await collectionsManager.saveRequest({
+              name: item.name || 'Imported Request',
+              method: request.method || 'GET',
+              url: typeof request.url === 'string' ? request.url : request.url.raw || '',
+              headers: headers,
+              params: params,
+              bodyType: bodyType,
+              body: body,
+              auth: null
+            }, parentId);
+            
+            importedRequests++;
           }
         }
-        
-        // Save request
-        await collectionsManager.saveRequest({
-          name: item.name || 'Imported Request',
-          method: request.method || 'GET',
-          url: typeof request.url === 'string' ? request.url : request.url.raw || '',
-          headers: headers,
-          params: params,
-          bodyType: bodyType,
-          body: body,
-          auth: null
-        }, collection.id);
-        
-        importedRequests++;
       }
-    }
+    };
+    
+    // Start processing from root items
+    await processFolder(data.item);
     
     return { collections: importedCollections, requests: importedRequests };
   }
