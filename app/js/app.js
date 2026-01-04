@@ -2840,6 +2840,7 @@ class App {
       URL.revokeObjectURL(url);
       
       this.showNotification('Collections exported successfully!');
+      document.getElementById('settingsModal').classList.remove('active');
     } catch (error) {
       console.error('Export failed:', error);
       alert('Failed to export collections');
@@ -2909,6 +2910,7 @@ class App {
       
       this.renderCollections();
       this.showNotification(`Imported ${importedCollections} collections, ${importedRequests} requests`);
+      document.getElementById('settingsModal').classList.remove('active');
       
     } catch (error) {
       console.error('Import failed:', error);
@@ -2984,8 +2986,13 @@ class App {
       }
     };
     
-    // Start processing from root items
-    await processFolder(data.item);
+    // First create the root collection from Postman collection name
+    const rootCollectionName = data.info?.name || 'Imported Collection';
+    const rootCollection = await collectionsManager.createCollection(rootCollectionName, null, null);
+    importedCollections++;
+    
+    // Process all items under the root collection
+    await processFolder(data.item, rootCollection.id);
     
     return { collections: importedCollections, requests: importedRequests };
   }
