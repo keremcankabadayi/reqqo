@@ -1874,9 +1874,11 @@ class App {
     // Build hierarchy map
     const childrenMap = new Map();
     const rootCollections = [];
+    const allIds = new Set(allCollections.map(c => c.id));
     
     for (const collection of allCollections) {
-      if (!collection.parentId) {
+      // Check if it's a root collection or orphan (parent doesn't exist)
+      if (!collection.parentId || !allIds.has(collection.parentId)) {
         rootCollections.push(collection);
       } else {
         if (!childrenMap.has(collection.parentId)) {
@@ -1885,6 +1887,12 @@ class App {
         childrenMap.get(collection.parentId).push(collection);
       }
     }
+    
+    // Sort by order
+    rootCollections.sort((a, b) => (a.order || 0) - (b.order || 0));
+    childrenMap.forEach((children) => {
+      children.sort((a, b) => (a.order || 0) - (b.order || 0));
+    });
     
     // Recursive function to render collection and its children
     const renderCollectionItem = async (collection, depth = 0) => {
@@ -1998,26 +2006,75 @@ class App {
       // Add drop zone events to collection
       headerEl.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
+        
+        // Determine drop zone: top edge, center, or bottom edge
+        const rect = headerEl.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        const edgeZone = rect.height * 0.25; // 25% top and bottom for reorder
+        
+        headerEl.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over-center');
+        
+        if (relativeY < edgeZone) {
+          headerEl.classList.add('drag-over-top');
+        } else if (relativeY > rect.height - edgeZone) {
+          headerEl.classList.add('drag-over-bottom');
+        } else {
+          headerEl.classList.add('drag-over-center');
+        }
         headerEl.classList.add('drag-over');
       });
       
       headerEl.addEventListener('dragleave', (e) => {
-        headerEl.classList.remove('drag-over');
+        headerEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom', 'drag-over-center');
       });
       
       headerEl.addEventListener('drop', async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        headerEl.classList.remove('drag-over');
+        headerEl.classList.remove('drag-over', 'drag-over-top', 'drag-over-bottom', 'drag-over-center');
         
         try {
           const data = JSON.parse(e.dataTransfer.getData('application/json'));
           if (data.type === 'request') {
             await this.moveRequestToCollection(data.id, collection.id);
           } else if (data.type === 'collection' && data.id !== collection.id) {
-            await this.moveCollectionToParent(data.id, collection.id);
+            const draggedCollection = await collectionsManager.getCollection(data.id);
+            if (!draggedCollection) {
+              console.error('Dragged collection not found:', data.id);
+              return;
+            }
+            
+            // Determine drop zone
+            const rect = headerEl.getBoundingClientRect();
+            const relativeY = e.clientY - rect.top;
+            const edgeZone = rect.height * 0.25;
+            
+            // Check if dropping on edges (reorder) or center (make subcollection)
+            if (relativeY < edgeZone || relativeY > rect.height - edgeZone) {
+              // Edge drop - reorder if same parent, otherwise move to same parent level
+              const sameParent = (draggedCollection.parentId || null) === (collection.parentId || null);
+              
+              if (sameParent) {
+                const position = relativeY < edgeZone ? 'before' : 'after';
+                await collectionsManager.reorderCollection(data.id, collection.id, position);
+                this.renderCollections();
+                this.showNotification('Collection reordered');
+              } else {
+                // Move to same parent level first, then reorder
+                await collectionsManager.updateCollectionParent(data.id, collection.parentId);
+                const position = relativeY < edgeZone ? 'before' : 'after';
+                await collectionsManager.reorderCollection(data.id, collection.id, position);
+                this.renderCollections();
+                this.showNotification('Collection moved');
+              }
+            } else {
+              // Center drop - make subcollection
+              await this.moveCollectionToParent(data.id, collection.id);
+            }
           }
         } catch (err) {
+          console.error('Drop error:', err);
           // Fallback for old format
           const requestId = e.dataTransfer.getData('text/plain');
           if (requestId) {
@@ -2059,10 +2116,14 @@ class App {
         }
       });
       
+      // Sort requests by order
+      requests.sort((a, b) => (a.order || 0) - (b.order || 0));
+      
       requests.forEach(req => {
         const reqEl = document.createElement('div');
         reqEl.className = 'request-item';
         reqEl.dataset.id = req.id;
+        reqEl.dataset.collectionId = collection.id;
         reqEl.draggable = true;
         reqEl.innerHTML = `
           <span class="drag-handle" title="Drag to move">
@@ -2102,6 +2163,47 @@ class App {
         
         reqEl.addEventListener('dragend', () => {
           reqEl.classList.remove('dragging');
+        });
+        
+        // Drag over for reordering requests
+        reqEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const rect = reqEl.getBoundingClientRect();
+          const isTopHalf = e.clientY < rect.top + rect.height / 2;
+          
+          reqEl.classList.remove('drag-over-top', 'drag-over-bottom');
+          reqEl.classList.add(isTopHalf ? 'drag-over-top' : 'drag-over-bottom');
+        });
+        
+        reqEl.addEventListener('dragleave', (e) => {
+          reqEl.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        
+        reqEl.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          reqEl.classList.remove('drag-over-top', 'drag-over-bottom');
+          
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (data.type === 'request' && data.id !== req.id) {
+              const draggedRequest = await collectionsManager.getRequest(data.id);
+              if (draggedRequest && draggedRequest.collectionId === req.collectionId) {
+                // Same collection - reorder
+                const rect = reqEl.getBoundingClientRect();
+                const position = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                await collectionsManager.reorderRequest(data.id, req.id, position);
+                this.renderCollections();
+              } else {
+                // Different collection - move to this collection
+                await this.moveRequestToCollection(data.id, req.collectionId);
+              }
+            }
+          } catch (err) {
+            console.error('Drop error:', err);
+          }
         });
         
         reqEl.addEventListener('click', async (e) => {
@@ -2202,6 +2304,7 @@ class App {
     
     // Check if newParentId is a descendant of collectionId (would create circular reference)
     const isDescendant = async (parentId, checkId) => {
+      if (!checkId) return false; // null means root, can't be a descendant
       const children = await collectionsManager.getChildCollections(parentId);
       for (const child of children) {
         if (child.id === checkId) return true;
@@ -2210,7 +2313,7 @@ class App {
       return false;
     };
     
-    if (await isDescendant(collectionId, newParentId)) {
+    if (newParentId && await isDescendant(collectionId, newParentId)) {
       this.showNotification('Cannot move collection into its own subcollection', 'error');
       return;
     }
@@ -2665,9 +2768,11 @@ class App {
     // Build hierarchy
     const childrenMap = new Map();
     const rootCollections = [];
+    const allIds = new Set(collectionsManager.collections.map(c => c.id));
     
     collectionsManager.collections.forEach(col => {
-      if (!col.parentId) {
+      // Check if it's a root collection or orphan (parent doesn't exist)
+      if (!col.parentId || !allIds.has(col.parentId)) {
         rootCollections.push(col);
       } else {
         if (!childrenMap.has(col.parentId)) {

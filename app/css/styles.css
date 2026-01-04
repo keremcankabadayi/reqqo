@@ -660,6 +660,14 @@ html, body {
   background: var(--bg-tertiary);
 }
 
+.request-item.drag-over-top {
+  border-top: 2px solid var(--accent-primary);
+}
+
+.request-item.drag-over-bottom {
+  border-bottom: 2px solid var(--accent-primary);
+}
+
 .collection-group.dragging {
   opacity: 0.5;
 }
@@ -679,6 +687,22 @@ html, body {
 .collection-header.drag-over {
   background: var(--accent-muted);
   border-radius: var(--radius-md);
+}
+
+.collection-header.drag-over-top {
+  border-top: 2px solid var(--accent-primary);
+  background: transparent;
+}
+
+.collection-header.drag-over-bottom {
+  border-bottom: 2px solid var(--accent-primary);
+  background: transparent;
+}
+
+.collection-header.drag-over-center {
+  background: var(--accent-muted);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 2px var(--accent-primary);
 }
 
 .collection-requests.drag-over {

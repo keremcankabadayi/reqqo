@@ -79,7 +79,9 @@ class CollectionsManager {
   async updateCollectionParent(id, newParentId) {
     const collection = await storage.get(STORES.COLLECTIONS, id);
     if (collection) {
-      collection.parentId = newParentId;
+      // Set parentId (null for root, or the new parent's id)
+      collection.parentId = newParentId || null;
+      
       // Get max order for new siblings
       const siblings = newParentId 
         ? await this.getChildCollections(newParentId)
@@ -89,9 +91,10 @@ class CollectionsManager {
       
       await storage.update(STORES.COLLECTIONS, collection);
       
+      // Update in-memory cache
       const index = this.collections.findIndex(c => c.id === id);
       if (index !== -1) {
-        this.collections[index] = collection;
+        this.collections[index] = { ...collection };
       }
     }
   }
@@ -160,6 +163,10 @@ class CollectionsManager {
   }
 
   async saveRequest(requestData, collectionId = null) {
+    // Get max order for requests in this collection
+    const siblings = await this.getRequestsInCollection(collectionId);
+    const maxOrder = siblings.reduce((max, r) => Math.max(max, r.order || 0), 0);
+    
     const request = {
       name: requestData.name,
       method: requestData.method,
@@ -170,10 +177,45 @@ class CollectionsManager {
       body: requestData.body,
       auth: requestData.auth,
       collectionId,
+      order: maxOrder + 1,
       createdAt: Date.now()
     };
 
     return await storage.add(STORES.REQUESTS, request);
+  }
+
+  async reorderRequest(requestId, targetRequestId, position) {
+    // position: 'before' or 'after'
+    const request = await storage.get(STORES.REQUESTS, requestId);
+    const target = await storage.get(STORES.REQUESTS, targetRequestId);
+    
+    if (!request || !target) return;
+    
+    // Only reorder within same collection
+    if (request.collectionId !== target.collectionId) return;
+    
+    // Get all requests in collection
+    const siblings = await this.getRequestsInCollection(request.collectionId);
+    
+    // Sort by current order
+    siblings.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Remove the dragged request from list
+    const filtered = siblings.filter(r => r.id !== requestId);
+    
+    // Find target index
+    const targetIndex = filtered.findIndex(r => r.id === targetRequestId);
+    
+    // Insert at correct position
+    const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+    filtered.splice(insertIndex, 0, request);
+    
+    // Update order for all requests
+    for (let i = 0; i < filtered.length; i++) {
+      const req = filtered[i];
+      req.order = i + 1;
+      await storage.update(STORES.REQUESTS, req);
+    }
   }
 
   async updateRequest(id, requestData) {
@@ -219,7 +261,12 @@ class CollectionsManager {
   async moveRequestToCollection(requestId, collectionId) {
     const request = await storage.get(STORES.REQUESTS, requestId);
     if (request) {
+      // Get max order in new collection
+      const siblings = await this.getRequestsInCollection(collectionId);
+      const maxOrder = siblings.reduce((max, r) => Math.max(max, r.order || 0), 0);
+      
       request.collectionId = collectionId;
+      request.order = maxOrder + 1;
       await storage.update(STORES.REQUESTS, request);
     }
     return request;
