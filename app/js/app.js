@@ -1428,7 +1428,9 @@ class App {
         return;
       }
       
-      const collectionName = result.title || this.extractHostFromUrl(url);
+      const importDate = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const baseName = result.title || this.extractHostFromUrl(url);
+      const collectionName = `${baseName} (imported ${importDate})`;
       const collection = await collectionsManager.createCollection(collectionName);
       
       for (const request of result.requests) {
@@ -1436,7 +1438,7 @@ class App {
       }
       
       this.renderCollections();
-      alert(`Successfully imported ${result.requests.length} endpoints into "${collectionName}" collection.`);
+      alert(`Successfully imported ${result.requests.length} endpoints into "${baseName}" collection.`);
       
     } catch (error) {
       console.error('Swagger import error:', error);
@@ -1462,7 +1464,9 @@ class App {
         return;
       }
       
-      const collectionName = result.title || this.extractHostFromUrl(url);
+      const importDate = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const baseName = result.title || this.extractHostFromUrl(url);
+      const collectionName = `${baseName} (imported ${importDate})`;
       const collection = await collectionsManager.createCollection(collectionName);
       
       for (const request of result.requests) {
@@ -1470,7 +1474,7 @@ class App {
       }
       
       this.renderCollections();
-      alert(`Successfully imported ${result.requests.length} endpoints into "${collectionName}" collection.`);
+      alert(`Successfully imported ${result.requests.length} endpoints into "${baseName}" collection.`);
       
     } catch (error) {
       console.error('Swagger import error:', error);
@@ -3002,7 +3006,9 @@ class App {
           throw new Error('No endpoints found in the Swagger document.');
         }
         
-        const collectionName = result.title || file.name.replace(/\.(json|yaml|yml)$/i, '');
+        const importDate = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        const baseName = result.title || file.name.replace(/\.(json|yaml|yml)$/i, '');
+        const collectionName = `${baseName} (imported ${importDate})`;
         const collection = await collectionsManager.createCollection(collectionName);
         importedCollections++;
         
@@ -3117,8 +3123,10 @@ class App {
       }
     };
     
-    // First create the root collection from Postman collection name
-    const rootCollectionName = data.info?.name || 'Imported Collection';
+    // First create the root collection from Postman collection name with import date
+    const importDate = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const baseName = data.info?.name || 'Imported Collection';
+    const rootCollectionName = `${baseName} (imported ${importDate})`;
     const rootCollection = await collectionsManager.createCollection(rootCollectionName, null, null);
     importedCollections++;
     
