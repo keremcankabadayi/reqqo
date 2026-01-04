@@ -281,6 +281,8 @@ class App {
 
     document.getElementById('expandAllBtn').addEventListener('click', () => this.expandAllCollections());
     document.getElementById('collapseAllBtn').addEventListener('click', () => this.collapseAllCollections());
+    document.getElementById('collectionsSearch').addEventListener('input', (e) => this.searchCollections(e.target.value));
+    document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearCollectionsSearch());
 
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-overlay').forEach(el => {
       el.addEventListener('click', () => this.closeModals());
@@ -1883,6 +1885,141 @@ class App {
     });
   }
 
+  clearCollectionsSearch() {
+    const searchInput = document.getElementById('collectionsSearch');
+    searchInput.value = '';
+    this.searchCollections('');
+    searchInput.focus();
+  }
+
+  searchCollections(query) {
+    const searchTerms = query.toLowerCase().trim().split(/\s+/).filter(t => t.length > 0);
+    const collectionGroups = document.querySelectorAll('.collection-group');
+    const requestItems = document.querySelectorAll('.request-item');
+    
+    if (searchTerms.length === 0) {
+      collectionGroups.forEach(group => {
+        group.style.display = '';
+        group.classList.remove('search-match');
+      });
+      requestItems.forEach(item => {
+        item.style.display = '';
+        item.classList.remove('search-match');
+      });
+      return;
+    }
+    
+    const matchesAllTerms = (text) => {
+      return searchTerms.every(term => text.includes(term));
+    };
+    
+    const collectionNameMatches = new Set();
+    const collectionsWithMatchingRequests = new Set();
+    const visibleCollectionIds = new Set();
+    
+    collectionGroups.forEach(group => {
+      const header = group.querySelector('.collection-header');
+      const collectionId = header?.dataset.id;
+      const collectionName = group.querySelector('.collection-name')?.textContent?.toLowerCase() || '';
+      
+      if (matchesAllTerms(collectionName)) {
+        collectionNameMatches.add(collectionId);
+      }
+    });
+    
+    requestItems.forEach(item => {
+      const requestName = item.querySelector('.request-name')?.textContent?.toLowerCase() || '';
+      const methodBadge = item.querySelector('.method-badge')?.textContent?.toLowerCase() || '';
+      const requestUrl = (item.dataset.url || '').toLowerCase();
+      const collectionId = item.dataset.collectionId;
+      const combinedText = `${requestName} ${methodBadge} ${requestUrl}`;
+      
+      if (matchesAllTerms(combinedText)) {
+        collectionsWithMatchingRequests.add(collectionId);
+      }
+    });
+    
+    const getParentCollectionIds = (group) => {
+      const parents = [];
+      let parent = group.parentElement?.closest('.collection-group');
+      while (parent) {
+        const parentHeader = parent.querySelector(':scope > .collection-header');
+        const parentId = parentHeader?.dataset.id;
+        if (parentId) parents.push(parentId);
+        parent = parent.parentElement?.closest('.collection-group');
+      }
+      return parents;
+    };
+    
+    const getChildCollectionIds = (group) => {
+      const children = [];
+      group.querySelectorAll('.collection-group').forEach(child => {
+        const childHeader = child.querySelector(':scope > .collection-header');
+        const childId = childHeader?.dataset.id;
+        if (childId) children.push(childId);
+      });
+      return children;
+    };
+    
+    collectionGroups.forEach(group => {
+      const header = group.querySelector(':scope > .collection-header');
+      const collectionId = header?.dataset.id;
+      const nameMatches = collectionNameMatches.has(collectionId);
+      const hasMatchingRequests = collectionsWithMatchingRequests.has(collectionId);
+      
+      if (nameMatches || hasMatchingRequests) {
+        visibleCollectionIds.add(collectionId);
+        getParentCollectionIds(group).forEach(id => visibleCollectionIds.add(id));
+        if (nameMatches) {
+          getChildCollectionIds(group).forEach(id => visibleCollectionIds.add(id));
+        }
+      }
+    });
+    
+    collectionGroups.forEach(group => {
+      const header = group.querySelector(':scope > .collection-header');
+      const collectionId = header?.dataset.id;
+      const isVisible = visibleCollectionIds.has(collectionId);
+      const nameMatches = collectionNameMatches.has(collectionId);
+      
+      if (isVisible) {
+        group.style.display = '';
+        if (nameMatches) {
+          group.classList.add('search-match');
+        } else {
+          group.classList.remove('search-match');
+        }
+        group.classList.remove('collapsed');
+        this.collapsedCollections.delete(collectionId);
+      } else {
+        group.style.display = 'none';
+        group.classList.remove('search-match');
+      }
+    });
+    
+    requestItems.forEach(item => {
+      const requestName = item.querySelector('.request-name')?.textContent?.toLowerCase() || '';
+      const methodBadge = item.querySelector('.method-badge')?.textContent?.toLowerCase() || '';
+      const requestUrl = (item.dataset.url || '').toLowerCase();
+      const collectionId = item.dataset.collectionId;
+      const combinedText = `${requestName} ${methodBadge} ${requestUrl}`;
+      const requestMatches = matchesAllTerms(combinedText);
+      const parentCollectionNameMatches = collectionNameMatches.has(collectionId);
+      
+      if (requestMatches || parentCollectionNameMatches) {
+        item.style.display = '';
+        if (requestMatches) {
+          item.classList.add('search-match');
+        } else {
+          item.classList.remove('search-match');
+        }
+      } else {
+        item.style.display = 'none';
+        item.classList.remove('search-match');
+      }
+    });
+  }
+
   async renderCollections() {
     const container = document.getElementById('collectionsList');
     const allCollections = await collectionsManager.loadCollections();
@@ -2168,7 +2305,9 @@ class App {
         reqEl.className = 'request-item';
         reqEl.dataset.id = req.id;
         reqEl.dataset.collectionId = collection.id;
+        reqEl.dataset.url = req.url || '';
         reqEl.draggable = true;
+        reqEl.title = req.url || '';
         reqEl.innerHTML = `
           <span class="drag-handle" title="Drag to move">
             <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
@@ -2380,11 +2519,11 @@ class App {
     }
   }
 
-  editCollection(collection) {
+  async editCollection(collection) {
     const newName = prompt('Enter new collection name:', collection.name);
     if (newName && newName.trim() !== collection.name) {
-      collectionsManager.updateCollection(collection.id, newName.trim());
-      this.renderCollections();
+      await collectionsManager.updateCollection(collection.id, newName.trim());
+      await this.renderCollections();
     }
   }
 
