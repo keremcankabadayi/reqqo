@@ -8,6 +8,7 @@
   padding: 4px 8px;
   gap: 4px;
   position: relative;
+  overflow-x: hidden;
 }
 
 .tabs-container::-webkit-scrollbar {

@@ -467,8 +467,14 @@ class App {
 
   scrollToActiveTab() {
     const activeTabEl = document.querySelector('.tab-item.active');
-    if (activeTabEl) {
-      activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    const tabsContainer = document.getElementById('tabsContainer');
+    if (activeTabEl && tabsContainer) {
+      const containerRect = tabsContainer.getBoundingClientRect();
+      const tabRect = activeTabEl.getBoundingClientRect();
+      
+      if (tabRect.top < containerRect.top || tabRect.bottom > containerRect.bottom) {
+        activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }
   }
 
