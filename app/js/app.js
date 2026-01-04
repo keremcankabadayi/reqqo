@@ -138,11 +138,6 @@ class App {
       this.showNewCollectionModal();
     });
     
-    document.getElementById('newSubcollectionOption').addEventListener('click', () => {
-      this.closeNewDropdown();
-      this.showNewSubcollectionModal();
-    });
-    
     document.addEventListener('click', (e) => {
       const dropdown = document.getElementById('newDropdown');
       if (dropdown && !dropdown.contains(e.target)) {
