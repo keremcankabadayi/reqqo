@@ -1917,6 +1917,13 @@ class App {
           <span class="collection-name">${this.escapeHtml(collection.name)}</span>
           <span class="badge">${totalCount}</span>
           <div class="collection-actions">
+            ${collection.parentId ? `
+            <button class="action-btn move-root" title="Move to Root" data-collection-id="${collection.id}">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M6 9V3M3 5l3-3 3 3"/>
+              </svg>
+            </button>
+            ` : ''}
             <button class="action-btn add-sub" title="Add Subcollection" data-collection-id="${collection.id}">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M6 3v6M3 6h6"/>
@@ -1961,6 +1968,15 @@ class App {
           this.toggleCollection(collection.id);
         }
       });
+
+      // Move to root button (only for subcollections)
+      const moveRootBtn = collectionEl.querySelector('.action-btn.move-root');
+      if (moveRootBtn) {
+        moveRootBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.moveCollectionToRoot(collection.id);
+        });
+      }
 
       collectionEl.querySelector('.action-btn.add-sub').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2129,25 +2145,29 @@ class App {
       await renderCollectionItem(rootCollection, 0);
     }
 
-    // Add drop zone for moving collections to root
-    container.addEventListener('dragover', (e) => {
-      e.preventDefault();
-    });
-    
-    container.addEventListener('drop', async (e) => {
-      // Only handle if dropped directly on container (not on a collection)
-      if (e.target === container || e.target.classList.contains('empty-state')) {
+    // Add drop zone for moving collections to root (only once)
+    if (!container.dataset.dropListenerAttached) {
+      container.dataset.dropListenerAttached = 'true';
+      
+      container.addEventListener('dragover', (e) => {
         e.preventDefault();
-        try {
-          const data = JSON.parse(e.dataTransfer.getData('application/json'));
-          if (data.type === 'collection') {
-            await this.moveCollectionToParent(data.id, null);
+      });
+      
+      container.addEventListener('drop', async (e) => {
+        // Only handle if dropped directly on container (not on a collection)
+        if (e.target === container || e.target.classList.contains('empty-state')) {
+          e.preventDefault();
+          try {
+            const data = JSON.parse(e.dataTransfer.getData('application/json'));
+            if (data.type === 'collection') {
+              await this.moveCollectionToParent(data.id, null);
+            }
+          } catch (err) {
+            // Ignore
           }
-        } catch (err) {
-          // Ignore
         }
-      }
-    });
+      });
+    }
     
     this.updateSaveRequestCollectionSelect();
     this.initialRenderDone = true;
@@ -2198,6 +2218,12 @@ class App {
     await collectionsManager.updateCollectionParent(collectionId, newParentId);
     this.renderCollections();
     this.showNotification('Collection moved successfully');
+  }
+
+  async moveCollectionToRoot(collectionId) {
+    await collectionsManager.updateCollectionParent(collectionId, null);
+    this.renderCollections();
+    this.showNotification('Collection moved to root');
   }
 
   async deleteCollection(collectionId) {

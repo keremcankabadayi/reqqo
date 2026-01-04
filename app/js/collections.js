@@ -9,9 +9,16 @@ class CollectionsManager {
   }
 
   async createCollection(name, customId = null, parentId = null) {
+    // Get max order for siblings
+    const siblings = parentId 
+      ? await this.getChildCollections(parentId)
+      : (await this.getAllCollections()).filter(c => !c.parentId);
+    const maxOrder = siblings.reduce((max, c) => Math.max(max, c.order || 0), 0);
+    
     const collection = {
       name,
       parentId: parentId,
+      order: maxOrder + 1,
       createdAt: Date.now()
     };
     
@@ -73,11 +80,59 @@ class CollectionsManager {
     const collection = await storage.get(STORES.COLLECTIONS, id);
     if (collection) {
       collection.parentId = newParentId;
+      // Get max order for new siblings
+      const siblings = newParentId 
+        ? await this.getChildCollections(newParentId)
+        : (await this.getAllCollections()).filter(c => !c.parentId && c.id !== id);
+      const maxOrder = siblings.reduce((max, c) => Math.max(max, c.order || 0), 0);
+      collection.order = maxOrder + 1;
+      
       await storage.update(STORES.COLLECTIONS, collection);
       
       const index = this.collections.findIndex(c => c.id === id);
       if (index !== -1) {
         this.collections[index] = collection;
+      }
+    }
+  }
+
+  async reorderCollection(collectionId, targetCollectionId, position) {
+    // position: 'before' or 'after'
+    const collection = await storage.get(STORES.COLLECTIONS, collectionId);
+    const target = await storage.get(STORES.COLLECTIONS, targetCollectionId);
+    
+    if (!collection || !target) return;
+    
+    // Only reorder within same parent level
+    if (collection.parentId !== target.parentId) return;
+    
+    // Get all siblings
+    const siblings = collection.parentId 
+      ? await this.getChildCollections(collection.parentId)
+      : (await this.getAllCollections()).filter(c => !c.parentId);
+    
+    // Sort by current order
+    siblings.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Remove the dragged collection from list
+    const filtered = siblings.filter(c => c.id !== collectionId);
+    
+    // Find target index
+    const targetIndex = filtered.findIndex(c => c.id === targetCollectionId);
+    
+    // Insert at correct position
+    const insertIndex = position === 'before' ? targetIndex : targetIndex + 1;
+    filtered.splice(insertIndex, 0, collection);
+    
+    // Update order for all siblings
+    for (let i = 0; i < filtered.length; i++) {
+      const col = filtered[i];
+      col.order = i + 1;
+      await storage.update(STORES.COLLECTIONS, col);
+      
+      const index = this.collections.findIndex(c => c.id === col.id);
+      if (index !== -1) {
+        this.collections[index] = col;
       }
     }
     return collection;
