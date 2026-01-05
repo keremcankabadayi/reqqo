@@ -3133,6 +3133,25 @@ class App {
     document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
   }
 
+  getCollectionDepth(collection, allCollections, visited = new Set()) {
+    if (!collection.parentId) {
+      return 0;
+    }
+    
+    // Prevent infinite loops
+    if (visited.has(collection.id)) {
+      return 0;
+    }
+    visited.add(collection.id);
+    
+    const parent = allCollections.find(c => c.id === collection.parentId);
+    if (!parent) {
+      return 0;
+    }
+    
+    return 1 + this.getCollectionDepth(parent, allCollections, visited);
+  }
+
   async exportCollections() {
     try {
       const collections = await collectionsManager.getAllCollections();
@@ -3208,10 +3227,37 @@ class App {
         const existingCollections = await collectionsManager.getAllCollections();
         const existingRequests = await collectionsManager.getAllRequests();
         
-        for (const collection of data.collections) {
+        // Sort collections: root collections first (no parentId), then children
+        // This ensures parent collections exist before their children are created
+        const sortedCollections = [...data.collections].sort((a, b) => {
+          const aDepth = this.getCollectionDepth(a, data.collections);
+          const bDepth = this.getCollectionDepth(b, data.collections);
+          return aDepth - bDepth;
+        });
+        
+        // Map old IDs to new IDs for parent reference
+        const idMap = new Map();
+        
+        for (const collection of sortedCollections) {
           const exists = existingCollections.some(c => c.id === collection.id);
           if (!exists) {
-            await collectionsManager.createCollection(collection.name, collection.id);
+            // Map parent ID if it was remapped
+            let parentId = collection.parentId;
+            if (parentId && idMap.has(parentId)) {
+              parentId = idMap.get(parentId);
+            }
+            
+            const newCollection = await collectionsManager.createCollection(
+              collection.name, 
+              collection.id, 
+              parentId
+            );
+            
+            // Store ID mapping in case IDs changed
+            if (newCollection.id !== collection.id) {
+              idMap.set(collection.id, newCollection.id);
+            }
+            
             importedCollections++;
           }
         }
@@ -3219,7 +3265,12 @@ class App {
         for (const request of data.requests) {
           const exists = existingRequests.some(r => r.id === request.id);
           if (!exists) {
-            await collectionsManager.importRequest(request);
+            // Update collectionId if it was remapped
+            const importRequest = { ...request };
+            if (importRequest.collectionId && idMap.has(importRequest.collectionId)) {
+              importRequest.collectionId = idMap.get(importRequest.collectionId);
+            }
+            await collectionsManager.importRequest(importRequest);
             importedRequests++;
           }
         }
