@@ -58,7 +58,7 @@ class TabManager {
     const tab = this.tabs[index];
     
     if (tab.isDirty) {
-      const confirmed = confirm('Bu tab kaydedilmemiş değişiklikler içeriyor. Kapatmak istediğinize emin misiniz?');
+      const confirmed = confirm('This tab has unsaved changes. Are you sure you want to close it?');
       if (!confirmed) return false;
     }
 
@@ -84,7 +84,7 @@ class TabManager {
   closeAllTabs() {
     const hasUnsaved = this.tabs.some(t => t.isDirty);
     if (hasUnsaved) {
-      const confirmed = confirm('Bazı tab\'lar kaydedilmemiş değişiklikler içeriyor. Tümünü kapatmak istediğinize emin misiniz?');
+      const confirmed = confirm('Some tabs have unsaved changes. Are you sure you want to close all?');
       if (!confirmed) return false;
     }
 
@@ -102,7 +102,7 @@ class TabManager {
 
     const otherTabsHaveUnsaved = this.tabs.some(t => t.id !== tabId && t.isDirty);
     if (otherTabsHaveUnsaved) {
-      const confirmed = confirm('Diğer tab\'lar kaydedilmemiş değişiklikler içeriyor. Kapatmak istediğinize emin misiniz?');
+      const confirmed = confirm('Other tabs have unsaved changes. Are you sure you want to close them?');
       if (!confirmed) return false;
     }
 

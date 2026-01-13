@@ -2607,7 +2607,7 @@ class App {
         
         const collectionInfo = item.collectionName && item.requestName 
           ? `${item.collectionName} / ${item.requestName}`
-          : item.requestName || 'Kaydedilmemiş';
+          : item.requestName || 'Unsaved';
         
         const timestamp = historyManager.formatFullTimestamp(item.timestamp);
         
@@ -2756,7 +2756,7 @@ class App {
       
       const collectionInfo = item.collectionName && item.requestName 
         ? `${item.collectionName} / ${item.requestName}`
-        : item.requestName || 'Kaydedilmemiş';
+        : item.requestName || 'Unsaved';
       
       const timestamp = historyManager.formatFullTimestamp(item.timestamp);
       
@@ -2808,7 +2808,7 @@ class App {
   }
 
   confirmClearHistory() {
-    if (confirm('Tüm geçmişi silmek istediğinize emin misiniz? Bu işlem geri alınamaz.')) {
+    if (confirm('Are you sure you want to clear all history? This action cannot be undone.')) {
       this.clearAllHistory();
     }
   }
@@ -3547,7 +3547,7 @@ class App {
     }
 
     this.markTabDirty();
-    this.showNotification('✓ Curl komutu yüklendi!');
+    this.showNotification('✓ Curl command loaded!');
   }
 
   showNotification(message) {
