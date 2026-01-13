@@ -1372,17 +1372,30 @@ html, body {
 .response-panels {
   flex: 1;
   overflow: auto;
+  min-height: 0;
+}
+
+.response-panels {
+  display: flex;
+  flex-direction: column;
 }
 
 .panel {
   display: none;
   padding: 16px;
   height: 100%;
+  min-height: 0;
 }
 
 .panel.active {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+#responseBodyPanel.active {
+  overflow: hidden;
 }
 
 /* Key-Value Editor */
@@ -1655,6 +1668,7 @@ html, body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-primary);
+  min-height: 0;
 }
 
 .response-header {

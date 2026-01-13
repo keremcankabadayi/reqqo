@@ -1,25 +1,46 @@
 /* JSON Editor Container */
 .jsoneditor-container {
   flex: 1;
-  min-height: 250px;
+  min-height: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.jsoneditor-container .jsoneditor {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.jsoneditor .jsoneditor-outer {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+  height: 100% !important;
 }
 
 .body-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 250px;
+  min-height: 0;
 }
 
 #responseBodyPanel.active {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 #responseBodyPanel .jsoneditor-container {
   flex: 1;
+  min-height: 0;
 }
 
 /* Dark Theme Overrides for JSON Editor */
