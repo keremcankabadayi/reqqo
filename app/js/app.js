@@ -650,6 +650,9 @@ class App {
 
     document.getElementById('contextDuplicate').addEventListener('click', () => {
       this.closeContextMenu();
+      if (tabId === this.tabManager.activeTabId) {
+        this.saveCurrentTabState();
+      }
       this.tabManager.duplicateTab(tabId);
       this.renderTabs();
       this.loadActiveTab();
