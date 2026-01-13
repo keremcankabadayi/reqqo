@@ -3,6 +3,16 @@ class RequestManager {
     this.abortController = null;
   }
 
+  addProtocolIfMissing(url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('localhost') || url.startsWith('127.0.0.1') || url.match(/^(\d{1,3}\.){3}\d{1,3}/)) {
+      return `http://${url}`;
+    }
+    return `https://${url}`;
+  }
+
   buildUrl(baseUrl, params = []) {
     let url = baseUrl.trim();
     
@@ -25,7 +35,7 @@ class RequestManager {
       return !usedPathParams.has(key);
     });
 
-    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const urlObj = new URL(this.addProtocolIfMissing(url));
     
     urlObj.search = '';
     

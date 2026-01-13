@@ -1199,10 +1199,20 @@ class App {
     return updatedUrl;
   }
 
+  addProtocolIfMissing(url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('localhost') || url.startsWith('127.0.0.1') || url.match(/^(\d{1,3}\.){3}\d{1,3}/)) {
+      return `http://${url}`;
+    }
+    return `https://${url}`;
+  }
+
   extractQueryParams(url) {
     const queryParams = [];
     try {
-      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const urlObj = new URL(this.addProtocolIfMissing(url));
       urlObj.searchParams.forEach((value, key) => {
         queryParams.push({ key, value });
       });
@@ -1227,7 +1237,7 @@ class App {
 
   getBaseUrlWithoutQuery(url) {
     try {
-      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const urlObj = new URL(this.addProtocolIfMissing(url));
       return urlObj.origin + urlObj.pathname;
     } catch (e) {
       return url.split('?')[0];
@@ -2963,7 +2973,7 @@ class App {
   generateRequestName(url) {
     if (!url) return 'New Request';
     try {
-      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      const urlObj = new URL(this.addProtocolIfMissing(url));
       let pathname = urlObj.pathname || '/';
       
       pathname = decodeURIComponent(pathname);
@@ -3417,7 +3427,7 @@ class App {
     
     // Extract query parameters
     try {
-      const urlObj = new URL(urlStr.startsWith('http') ? urlStr : `https://${urlStr}`);
+      const urlObj = new URL(this.addProtocolIfMissing(urlStr));
       urlObj.searchParams.forEach((value, key) => {
         // Don't add if it's a path param placeholder
         if (!params.some(p => p.key === key)) {
