@@ -1233,21 +1233,28 @@ html, body {
   top: calc(100% + 4px);
   right: 0;
   min-width: 160px;
+  max-width: calc(100vw - 20px);
   background: var(--bg-secondary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   opacity: 0;
   visibility: hidden;
-  transform: translateY(-8px);
+  transform: translateY(-8px) translateX(0);
   transition: all 0.15s ease;
-  z-index: 100;
+  z-index: 1000;
+}
+
+.save-dropdown .dropdown-menu {
+  right: auto;
+  left: 50%;
+  transform: translateY(-8px) translateX(-50%);
 }
 
 .save-dropdown.open .dropdown-menu {
   opacity: 1;
   visibility: visible;
-  transform: translateY(0);
+  transform: translateY(0) translateX(-50%);
 }
 
 .dropdown-item {
