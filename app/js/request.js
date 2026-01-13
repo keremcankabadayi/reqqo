@@ -24,12 +24,10 @@ class RequestManager {
       const key = placeholderManager.replacePlaceholders(p.key);
       return !usedPathParams.has(key);
     });
-    
-    if (queryParams.length === 0) {
-      return url;
-    }
 
     const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    
+    urlObj.search = '';
     
     queryParams.forEach(param => {
       const key = placeholderManager.replacePlaceholders(param.key);
