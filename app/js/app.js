@@ -799,6 +799,9 @@ class App {
         if (selectAllId) {
           this.updateSelectAllCheckbox(containerId, selectAllId);
         }
+        if (containerId === 'paramsRows') {
+          this.reorderParamsByEnabled();
+        }
       }
     });
 
@@ -835,6 +838,17 @@ class App {
     }
     
     this.markTabDirty();
+  }
+
+  reorderParamsByEnabled() {
+    const params = this.currentRequest.params;
+    const enabledParams = params.filter(p => p.enabled);
+    const disabledParams = params.filter(p => !p.enabled);
+    
+    const reorderedParams = [...enabledParams, ...disabledParams];
+    
+    this.currentRequest.params = reorderedParams;
+    this.renderKeyValueRows('paramsRows', reorderedParams);
   }
 
   addKeyValueRow(containerId) {
@@ -1228,20 +1242,20 @@ class App {
     
     const currentParams = this.currentRequest.params.filter(p => p.key && p.key.trim());
     
-    const urlParamKeys = new Set([
-      ...pathParamNames,
-      ...queryParams.map(qp => qp.key)
-    ]);
-    
-    const newParams = [];
+    const enabledParams = [];
+    const disabledParams = [];
     const addedKeys = new Set();
     
     for (const paramName of pathParamNames) {
       const existingParam = currentParams.find(p => p.key.trim() === paramName);
       if (existingParam) {
-        newParams.push(existingParam);
+        if (existingParam.enabled) {
+          enabledParams.push(existingParam);
+        } else {
+          disabledParams.push(existingParam);
+        }
       } else {
-        newParams.push({ enabled: true, key: paramName, value: '' });
+        enabledParams.push({ enabled: true, key: paramName, value: '' });
       }
       addedKeys.add(paramName);
     }
@@ -1253,13 +1267,31 @@ class App {
           if (!existingParam.value && qp.value) {
             existingParam.value = qp.value;
           }
-          newParams.push(existingParam);
+          if (existingParam.enabled) {
+            enabledParams.push(existingParam);
+          } else {
+            disabledParams.push(existingParam);
+          }
         } else {
-          newParams.push({ enabled: true, key: qp.key, value: qp.value });
+          enabledParams.push({ enabled: true, key: qp.key, value: qp.value });
         }
         addedKeys.add(qp.key);
       }
     }
+    
+    for (const param of currentParams) {
+      const paramKey = param.key.trim();
+      if (!addedKeys.has(paramKey)) {
+        if (param.enabled) {
+          enabledParams.push(param);
+        } else {
+          disabledParams.push(param);
+        }
+        addedKeys.add(paramKey);
+      }
+    }
+    
+    const newParams = [...enabledParams, ...disabledParams];
     
     if (newParams.length === 0) {
       newParams.push({ enabled: true, key: '', value: '' });
