@@ -154,6 +154,7 @@ class App {
     document.getElementById('requestUrl').addEventListener('input', (e) => {
       this.currentRequest.url = e.target.value;
       this.markTabDirty();
+      this.debouncedSyncParamsFromUrl();
     });
 
     document.getElementById('requestUrl').addEventListener('blur', (e) => {
@@ -189,7 +190,7 @@ class App {
         setTimeout(() => {
           this.currentRequest.url = document.getElementById('requestUrl').value;
           this.syncParamsFromUrl();
-        }, 10);
+        }, 50);
       }
     });
 
@@ -1244,6 +1245,16 @@ class App {
     }
   }
 
+  debouncedSyncParamsFromUrl() {
+    if (this.syncParamsDebounceTimer) {
+      clearTimeout(this.syncParamsDebounceTimer);
+    }
+    this.syncParamsDebounceTimer = setTimeout(() => {
+      this.syncParamsFromUrl();
+      this.syncParamsDebounceTimer = null;
+    }, 300);
+  }
+
   syncParamsFromUrl() {
     if (this.isSyncingParams) return;
     
@@ -1255,6 +1266,11 @@ class App {
     
     const currentParams = this.currentRequest.params.filter(p => p.key && p.key.trim());
     
+    const urlParamKeys = new Set([
+      ...pathParamNames,
+      ...queryParams.map(qp => qp.key)
+    ]);
+    
     const enabledParams = [];
     const disabledParams = [];
     const addedKeys = new Set();
@@ -1262,11 +1278,8 @@ class App {
     for (const paramName of pathParamNames) {
       const existingParam = currentParams.find(p => p.key.trim() === paramName);
       if (existingParam) {
-        if (existingParam.enabled) {
-          enabledParams.push(existingParam);
-        } else {
-          disabledParams.push(existingParam);
-        }
+        existingParam.enabled = true;
+        enabledParams.push(existingParam);
       } else {
         enabledParams.push({ enabled: true, key: paramName, value: '' });
       }
@@ -1277,14 +1290,9 @@ class App {
       if (!addedKeys.has(qp.key)) {
         const existingParam = currentParams.find(p => p.key.trim() === qp.key);
         if (existingParam) {
-          if (!existingParam.value && qp.value) {
-            existingParam.value = qp.value;
-          }
-          if (existingParam.enabled) {
-            enabledParams.push(existingParam);
-          } else {
-            disabledParams.push(existingParam);
-          }
+          existingParam.value = qp.value;
+          existingParam.enabled = true;
+          enabledParams.push(existingParam);
         } else {
           enabledParams.push({ enabled: true, key: qp.key, value: qp.value });
         }
@@ -1295,11 +1303,8 @@ class App {
     for (const param of currentParams) {
       const paramKey = param.key.trim();
       if (!addedKeys.has(paramKey)) {
-        if (param.enabled) {
-          enabledParams.push(param);
-        } else {
-          disabledParams.push(param);
-        }
+        param.enabled = false;
+        disabledParams.push(param);
         addedKeys.add(paramKey);
       }
     }
