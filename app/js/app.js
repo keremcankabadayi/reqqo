@@ -25,6 +25,9 @@ class App {
     await storage.ensureDB();
     await placeholderManager.loadEnvironments();
     await collectionsManager.loadCollections();
+    // Before any Send can fire, so the send path knows which hosts are already
+    // approved without having to ask Chrome mid-gesture.
+    await requestManager.loadGrantedOrigins();
 
     this.tabManager.loadFromLocalStorage();
     

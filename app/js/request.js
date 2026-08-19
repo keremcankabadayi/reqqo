@@ -1,6 +1,38 @@
 class RequestManager {
   constructor() {
     this.abortController = null;
+    this.grantedOrigins = new Set();
+  }
+
+  // Snapshot the origins Chrome has already granted, and follow changes to
+  // them. The send path needs to know whether it holds access *synchronously*:
+  // asking Chrome would mean an await, and an await before
+  // permissions.request() discards the click gesture that call requires. So the
+  // question is answered from this cache instead.
+  async loadGrantedOrigins() {
+    if (typeof chrome === 'undefined' || !chrome.permissions) {
+      return;
+    }
+
+    try {
+      const current = await chrome.permissions.getAll();
+      this.grantedOrigins = new Set(current.origins || []);
+
+      chrome.permissions.onAdded.addListener((added) => {
+        (added.origins || []).forEach((origin) => this.grantedOrigins.add(origin));
+      });
+      chrome.permissions.onRemoved.addListener((removed) => {
+        (removed.origins || []).forEach((origin) => this.grantedOrigins.delete(origin));
+      });
+    } catch (error) {
+      // Leave the cache empty: ensureHostPermission() still falls back to
+      // request(), which is a no-op prompt-wise when access is already held.
+      console.warn('Could not read granted host permissions:', error);
+    }
+  }
+
+  hasHostPermission(origin) {
+    return this.grantedOrigins.has('<all_urls>') || this.grantedOrigins.has(origin);
   }
 
   addProtocolIfMissing(url) {
@@ -43,9 +75,17 @@ class RequestManager {
       return { granted: true };
     }
 
+    // The pattern covers the whole host, so every path and query string on a
+    // host the user has already approved goes straight through — request() is
+    // never reached, and no second prompt is possible.
+    if (this.hasHostPermission(origin)) {
+      return { granted: true };
+    }
+
     try {
       const granted = await chrome.permissions.request({ origins: [origin] });
       if (granted) {
+        this.grantedOrigins.add(origin);
         return { granted: true };
       }
       return {
