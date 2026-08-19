@@ -34,17 +34,11 @@ credentials you would not keep in a local text file.
 
 ## Network requests
 
-Reqqo sends HTTP requests to the addresses you type into it, only when you ask
-it to, and only with the headers and body you supply. Neither those requests nor
-their responses are sent anywhere else, and none of them reach any server
-belonging to the developer.
-
-Separately, Reqqo's interface loads its fonts from Google Fonts
-(`fonts.googleapis.com` and `fonts.gstatic.com`) when you open it. Google
-receives the standard information any web request carries — your IP address and
-browser user-agent — as described in Google's own privacy policy. No information
-about your requests, collections, or credentials is included. This is the only
-network connection Reqqo makes that you did not initiate.
+Reqqo sends HTTP requests **only** to the addresses you type into it, only when
+you ask it to, and only with the headers and body you supply. It makes no other
+network connections of any kind — no content delivery networks, no font or asset
+hosts, and no server belonging to the developer. Every file the interface needs
+ships inside the extension and loads from your own disk.
 
 ## Why Reqqo asks for access to all websites
 
@@ -60,14 +54,12 @@ requests you explicitly compose and send from the Reqqo tab.
 ## Third parties
 
 Reqqo bundles the Monaco editor and JSONEditor for editing and syntax
-highlighting. Both are included in the extension package, load from your local
-disk, and make no network calls of their own.
+highlighting, and the JetBrains Mono and Outfit typefaces for its interface. All
+of them are included in the extension package, load from your local disk, and
+make no network calls of their own.
 
-Google Fonts is the one third-party service Reqqo contacts, and only to fetch
-the fonts described above.
-
-Beyond that, Reqqo shares no data with any third party, because it collects
-none.
+Reqqo contacts no third-party service, and shares no data with any third party,
+because it collects none.
 
 ## Changes
 
