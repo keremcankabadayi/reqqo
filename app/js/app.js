@@ -1214,14 +1214,32 @@ class App {
     const queryParams = [];
     try {
       const urlObj = new URL(this.addProtocolIfMissing(url));
-      urlObj.searchParams.forEach((value, key) => {
-        queryParams.push({ key, value });
-      });
+      const queryString = urlObj.search.slice(1);
+      if (queryString) {
+        const pairs = queryString.split('&');
+        pairs.forEach((pair, index) => {
+          if (!pair.includes('=') && index === pairs.length - 1) {
+            return;
+          }
+          const [key, ...valueParts] = pair.split('=');
+          const value = valueParts.join('=');
+          if (key) {
+            queryParams.push({ 
+              key: decodeURIComponent(key), 
+              value: value ? decodeURIComponent(value) : '' 
+            });
+          }
+        });
+      }
     } catch (e) {
       const queryMatch = url.match(/\?(.+?)(?:#|$)/);
       if (queryMatch) {
         const queryString = queryMatch[1];
-        queryString.split('&').forEach(pair => {
+        const pairs = queryString.split('&');
+        pairs.forEach((pair, index) => {
+          if (!pair.includes('=') && index === pairs.length - 1) {
+            return;
+          }
           const [key, ...valueParts] = pair.split('=');
           const value = valueParts.join('=');
           if (key) {
