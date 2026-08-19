@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Reqqo">
+  <defs>
+    <linearGradient id="reqqoGrad" gradientUnits="userSpaceOnUse" x1="2" y1="2" x2="30" y2="30">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#ff79c6"/>
+    </linearGradient>
+    <mask id="reqqoMask">
+      <rect width="32" height="32" fill="#fff"/>
+      <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.8 8 V 23.4" stroke-width="4.4"/>
+        <path d="M10.8 8 H 16 A 4.2 4.2 0 0 1 16 16.4 H 10.8" stroke-width="4.4"/>
+        <path d="M14.8 16.4 L 22.6 25.2" stroke-width="5"/>
+      </g>
+    </mask>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#reqqoGrad)" mask="url(#reqqoMask)"/>
+</svg>
