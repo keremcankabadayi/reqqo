@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Reqqo",
   "version": "1.0.0",
-  "description": "Powerful REST API testing tool - Postman alternative for your browser",
+  "description": "Send, inspect and organize HTTP requests in your browser. Collections, history, auth and a built-in JSON editor.",
   "action": {
     "default_icon": {
       "16": "icons/icon16.png",
@@ -14,9 +14,6 @@
   "background": {
     "service_worker": "background.js"
   },
-  "permissions": [
-    "storage"
-  ],
   "host_permissions": [
     "<all_urls>"
   ],
