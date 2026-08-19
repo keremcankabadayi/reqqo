@@ -42,10 +42,17 @@ ships inside the extension and loads from your own disk.
 
 ## Why Reqqo asks for access to all websites
 
-The extension declares the `<all_urls>` host permission. This is required
-because an HTTP client cannot know in advance which endpoints you will want to
-call — the permission is what allows Reqqo to send your request to whatever
-address you enter.
+Reqqo installs with no host access at all. `<all_urls>` is declared as an
+*optional* permission, which means Chrome grants nothing until you ask for it.
+
+The first time you send a request to a given host, Chrome shows its own prompt
+asking whether Reqqo may access that host, and the request proceeds only if you
+agree. Access is granted per host, not to the web at large, and you can review
+or revoke it at any time from Chrome's extension settings.
+
+The permission is declared as `<all_urls>` rather than a fixed list because an
+HTTP client cannot know in advance which endpoints you will want to call — it
+may be your own localhost, an internal staging server, or any public API.
 
 Reqqo does not read, modify, or inject scripts into the web pages you browse. It
 does not run content scripts at all. The permission is used solely to issue the

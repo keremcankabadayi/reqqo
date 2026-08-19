@@ -1010,6 +1010,16 @@ class App {
       return;
     }
 
+    // Must run before anything else awaits: chrome.permissions.request() needs
+    // the user gesture from the Send click, and an earlier await discards it.
+    const permission = await requestManager.ensureHostPermission(
+      placeholderManager.replacePlaceholders(url)
+    );
+    if (!permission.granted) {
+      this.displayResponse({ success: false, error: permission.error, duration: 0 });
+      return;
+    }
+
     this.setLoading(true);
     
     const body = this.getBodyForCurrentType();
@@ -1488,6 +1498,12 @@ class App {
   }
 
   async importSwaggerFromUrl(url) {
+    const permission = await requestManager.ensureHostPermission(url);
+    if (!permission.granted) {
+      alert(permission.error);
+      return;
+    }
+
     try {
       const response = await fetch(url.trim());
       if (!response.ok) {
@@ -1523,7 +1539,13 @@ class App {
   async showImportSwaggerModal() {
     const url = prompt('Enter Swagger JSON URL:\n\nExample: https://api.example.com/swagger/doc.json');
     if (!url || !url.trim()) return;
-    
+
+    const permission = await requestManager.ensureHostPermission(url);
+    if (!permission.granted) {
+      alert(permission.error);
+      return;
+    }
+
     try {
       const response = await fetch(url.trim());
       if (!response.ok) {

@@ -13,6 +13,53 @@ class RequestManager {
     return `https://${url}`;
   }
 
+  // Chrome match patterns cover every port on a host and reject an explicit
+  // one, so the port is deliberately dropped here.
+  originPatternFor(url) {
+    try {
+      const urlObj = new URL(this.addProtocolIfMissing(url.trim()));
+      if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+        return null;
+      }
+      return `${urlObj.protocol}//${urlObj.hostname}/*`;
+    } catch {
+      return null;
+    }
+  }
+
+  // <all_urls> is optional rather than granted at install, so each origin has to
+  // be requested the first time it is used. Chrome requires a user gesture for
+  // permissions.request(), and an await before this call discards that gesture —
+  // callers must reach it directly from the click that started the action.
+  // Already-granted origins resolve immediately without showing a prompt.
+  async ensureHostPermission(url) {
+    if (typeof chrome === 'undefined' || !chrome.permissions) {
+      return { granted: true };
+    }
+
+    const origin = this.originPatternFor(url);
+    if (!origin) {
+      // Not an address we can express as a match pattern; let fetch report it.
+      return { granted: true };
+    }
+
+    try {
+      const granted = await chrome.permissions.request({ origins: [origin] });
+      if (granted) {
+        return { granted: true };
+      }
+      return {
+        granted: false,
+        error: `Reqqo needs your permission to reach ${origin} before it can send this request.`
+      };
+    } catch (error) {
+      return {
+        granted: false,
+        error: `Could not request access to ${origin} (${error.message}). Try the action again.`
+      };
+    }
+  }
+
   buildUrl(baseUrl, params = []) {
     let url = baseUrl.trim();
     
