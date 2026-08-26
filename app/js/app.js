@@ -389,6 +389,16 @@ class App {
         this.closeCollectionContextMenu();
       }
     });
+
+    // Editor state only lives in this.currentRequest until something writes it
+    // to the active tab. Closing the window is the last chance to do that.
+    // visibilitychange fires when a popup is dismissed; pagehide covers reloads
+    // and real navigations. beforeunload is not reliable for extension pages.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') this.flushTabState();
+    });
+
+    window.addEventListener('pagehide', () => this.flushTabState());
   }
 
   renderTabs() {
@@ -601,6 +611,13 @@ class App {
       response: currentResponse,
       isDirty: this.currentRequest.id !== null && this.hasUnsavedChanges()
     });
+  }
+
+  // Same as saveCurrentTabState, but skips TabManager's 500ms debounce: on the
+  // way out there is no later tick, so a debounced write would never land.
+  flushTabState() {
+    this.saveCurrentTabState();
+    this.tabManager.saveToLocalStorage();
   }
 
   hasUnsavedChanges() {
@@ -1189,6 +1206,11 @@ class App {
         });
         this.renderTabs();
       }
+
+      // updateTab above only carries the response; without this the URL, headers
+      // and body that were just sent never reach the tab, so an unsaved request
+      // disappears on reopen.
+      this.saveCurrentTabState();
     } catch (error) {
       this.setLoading(false);
       this.displayResponse({
@@ -1196,6 +1218,7 @@ class App {
         error: error.message || 'Unknown error',
         duration: 0
       });
+      this.saveCurrentTabState();
     }
   }
 
