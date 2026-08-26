@@ -246,6 +246,10 @@ class App {
         const parsed = this.parseCurlCommand(pastedText);
         if (parsed) {
           this.loadFromCurl(parsed);
+        } else {
+          // preventDefault already swallowed the paste; say so instead of
+          // leaving the user with an empty field and no explanation.
+          this.showNotification('Could not parse the curl command', 'error');
         }
       } else if (this.isSwaggerUrl(pastedText)) {
         e.preventDefault();
@@ -3588,6 +3592,83 @@ class App {
     return params;
   }
 
+  // Splits on whitespace but keeps quoted runs intact, so a JSON -d payload
+  // stays one token no matter how much whitespace it contains.
+  tokenizeCurlCommand(input) {
+    const tokens = [];
+    let current = '';
+    let quote = null;
+    let started = false;
+
+    for (const char of input) {
+      if (quote) {
+        if (char === quote) quote = null;
+        else current += char;
+        continue;
+      }
+      if (char === "'" || char === '"') {
+        quote = char;
+        started = true;
+        continue;
+      }
+      if (/\s/.test(char)) {
+        if (started) tokens.push(current);
+        current = '';
+        started = false;
+        continue;
+      }
+      current += char;
+      started = true;
+    }
+    if (started) tokens.push(current);
+
+    return tokens;
+  }
+
+  // curl flags that consume the next argument; without this list a value like
+  // POST (from -X POST) could be mistaken for the request target.
+  static CURL_VALUE_FLAGS = new Set([
+    '-X', '--request', '-H', '--header', '-d', '--data', '--data-raw',
+    '--data-binary', '--data-urlencode', '-u', '--user', '-A', '--user-agent',
+    '-e', '--referer', '-b', '--cookie', '-c', '--cookie-jar', '-F', '--form',
+    '-o', '--output', '-T', '--upload-file', '-x', '--proxy', '-m', '--max-time',
+    '--connect-timeout', '--retry', '--cacert', '--cert', '--key', '--resolve'
+  ]);
+
+  extractCurlUrl(tokens) {
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+
+      if (i === 0 && token === 'curl') continue;
+
+      if (token === '--url') {
+        const value = tokens[i + 1];
+        return value ? this.normalizeCurlUrl(value) : '';
+      }
+
+      if (token.startsWith('-')) {
+        if (App.CURL_VALUE_FLAGS.has(token)) i++; // skip this flag's value
+        continue;
+      }
+
+      if (this.looksLikeCurlUrl(token)) return this.normalizeCurlUrl(token);
+    }
+
+    return '';
+  }
+
+  looksLikeCurlUrl(token) {
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(token)) return true;
+
+    // host[:port] followed by end, path, query or fragment — IPv4, IPv6, localhost,
+    // or a dotted hostname. Anything else is left alone rather than guessed at.
+    return /^(?:localhost|\d{1,3}(?:\.\d{1,3}){3}|\[[0-9a-fA-F:]+\]|[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?::\d+)?(?:[/?#]|$)/.test(token);
+  }
+
+  normalizeCurlUrl(token) {
+    return /^[a-z][a-z0-9+.-]*:\/\//i.test(token) ? token : `http://${token}`;
+  }
+
   parseCurlCommand(curlString) {
     try {
       const parsed = {
@@ -3603,18 +3684,9 @@ class App {
         .replace(/\s+/g, ' ')      // Normalize spaces
         .trim();
       
-      // Extract URL first (before modifying the string)
-      // Look for quoted strings that look like URLs (start with http:// or https://)
-      const quotedUrlMatch = normalized.match(/(['"])(https?:\/\/[^'"]+)\1/);
-      if (quotedUrlMatch) {
-        parsed.url = quotedUrlMatch[2];
-      } else {
-        // Try to find unquoted URL
-        const unquotedUrlMatch = normalized.match(/(https?:\/\/[^\s'"]+)/);
-        if (unquotedUrlMatch) {
-          parsed.url = unquotedUrlMatch[1];
-        }
-      }
+      // Walk the argument list instead of regex-matching a scheme, so schemeless
+      // targets (curl "10.0.0.1:9200/_search") import like curl itself accepts them.
+      parsed.url = this.extractCurlUrl(this.tokenizeCurlCommand(normalized));
 
       // Extract method
       const methodMatch = normalized.match(/(?:-X|--request)\s+(['"]?)(\w+)\1/);
