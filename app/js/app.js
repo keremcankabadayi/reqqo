@@ -616,6 +616,10 @@ class App {
       body: responseBody
     };
 
+    const responseView = typeof getResponseViewState === 'function'
+      ? getResponseViewState()
+      : activeTab.responseView;
+
     this.tabManager.updateTab(activeTab.id, {
       request: {
         ...this.currentRequest,
@@ -623,6 +627,7 @@ class App {
         rawBody: rawBody
       },
       response: currentResponse,
+      responseView: responseView,
       isDirty: this.currentRequest.id !== null && this.hasUnsavedChanges()
     });
   }
@@ -654,6 +659,12 @@ class App {
         success: true,
         ...activeTab.response
       });
+
+      // displayResponse rebuilds the editor from scratch; put the viewer's mode
+      // and search term back so returning to a tab shows what was left there.
+      if (typeof applyResponseViewState === 'function') {
+        applyResponseViewState(activeTab.responseView);
+      }
     } else {
       this.clearResponse();
     }

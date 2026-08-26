@@ -41,6 +41,8 @@ class TabManager {
         duration: 0,
         size: 0
       },
+      // Response viewer mode and search term, so switching tabs does not reset them
+      responseView: initialData.responseView || null,
       isDirty: false
     };
 
@@ -157,6 +159,10 @@ class TabManager {
 
     if (data.response) {
       tab.response = { ...tab.response, ...data.response };
+    }
+
+    if (data.responseView !== undefined) {
+      tab.responseView = data.responseView;
     }
 
     if (data.isDirty !== undefined) {

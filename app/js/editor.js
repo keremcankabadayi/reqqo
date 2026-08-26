@@ -235,6 +235,52 @@ function setResponseBody(value) {
   }
 }
 
+function getResponseSearchInput() {
+  return document.querySelector('#responseBodyEditor .jsoneditor-search input');
+}
+
+// setResponseBody rebuilds the editor on every tab switch, which drops the
+// search term and forces mode back to 'view'. These two let the caller carry
+// that state across the rebuild.
+function getResponseViewState() {
+  if (!responseBodyEditor) return null;
+
+  let mode = null;
+  try {
+    mode = responseBodyEditor.getMode();
+  } catch {
+    mode = null;
+  }
+
+  const searchInput = getResponseSearchInput();
+  return { mode, search: searchInput ? searchInput.value : '' };
+}
+
+function applyResponseViewState(state) {
+  if (!responseBodyEditor || !state) return;
+
+  if (state.mode) {
+    try {
+      responseBodyEditor.setMode(state.mode);
+    } catch {
+      // mode unavailable for this payload; keep whatever setResponseBody chose
+    }
+  }
+
+  if (!state.search) return;
+
+  // The search box belongs to the freshly rendered menu bar, so wait a tick.
+  setTimeout(() => {
+    const searchInput = getResponseSearchInput();
+    if (!searchInput) return;
+
+    searchInput.value = state.search;
+    // jsoneditor's search box listens for keyup; assigning .value alone is
+    // invisible to it and would show a filled box with no highlights.
+    searchInput.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+  }, 0);
+}
+
 function getResponseBody() {
   if (responseBodyEditor) {
     try {
