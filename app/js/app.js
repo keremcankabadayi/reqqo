@@ -31,6 +31,7 @@ class App {
 
     this.tabManager.loadFromLocalStorage();
     
+    this.renderVersionBadge();
     this.bindEvents();
     this.bindTabEvents();
     this.setupResizers();
@@ -40,6 +41,22 @@ class App {
     
     this.renderTabs();
     this.loadActiveTab();
+  }
+
+  // manifest.json "version" is the same value the Chrome Web Store publishes,
+  // so the badge never drifts from the released build.
+  renderVersionBadge() {
+    const badge = document.getElementById('versionBadge');
+    if (!badge) return;
+
+    // typeof guard: `chrome` is an undeclared identifier outside the extension,
+    // where optional chaining would still throw a ReferenceError.
+    const version = typeof chrome !== 'undefined'
+      ? chrome.runtime?.getManifest?.().version
+      : null;
+    if (!version) return; // opened outside the extension: leave empty, CSS hides it
+
+    badge.textContent = `v${version}`;
   }
 
   setupResizers() {
@@ -304,6 +321,17 @@ class App {
       const contextMenu = document.getElementById('tabContextMenu');
       if (!contextMenu.contains(e.target) && !e.target.closest('.tab-item')) {
         this.closeContextMenu();
+      }
+
+      const collectionMenu = document.getElementById('collectionContextMenu');
+      if (collectionMenu && !collectionMenu.contains(e.target)) {
+        this.closeCollectionContextMenu();
+      }
+    });
+
+    document.addEventListener('contextmenu', (e) => {
+      if (!e.target.closest('.collection-header')) {
+        this.closeCollectionContextMenu();
       }
     });
   }
@@ -689,6 +717,45 @@ class App {
   closeContextMenu() {
     const menu = document.getElementById('tabContextMenu');
     menu.classList.remove('show');
+  }
+
+  showCollectionContextMenu(event, collection) {
+    const menu = document.getElementById('collectionContextMenu');
+    if (!menu) return;
+
+    this.closeContextMenu();
+
+    menu.style.left = `${event.clientX}px`;
+    menu.style.top = `${event.clientY}px`;
+    menu.classList.add('show');
+
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      menu.style.left = `${window.innerWidth - rect.width - 10}px`;
+    }
+    if (rect.bottom > window.innerHeight) {
+      menu.style.top = `${window.innerHeight - rect.height - 10}px`;
+    }
+
+    // Re-bind per open: cloning drops listeners from the previous collection
+    const bind = (id, handler) => {
+      const stale = document.getElementById(id);
+      const fresh = stale.cloneNode(true);
+      stale.replaceWith(fresh);
+      fresh.addEventListener('click', () => {
+        this.closeCollectionContextMenu();
+        handler();
+      });
+    };
+
+    bind('collectionContextAddSub', () => this.addSubcollection(collection.id));
+    bind('collectionContextEdit', () => this.editCollection(collection));
+    bind('collectionContextDelete', () => this.deleteCollection(collection.id));
+  }
+
+  closeCollectionContextMenu() {
+    const menu = document.getElementById('collectionContextMenu');
+    if (menu) menu.classList.remove('show');
   }
 
   markTabDirty() {
@@ -2194,21 +2261,6 @@ class App {
               </svg>
             </button>
             ` : ''}
-            <button class="action-btn add-sub" title="Add Subcollection" data-collection-id="${collection.id}">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M6 3v6M3 6h6"/>
-              </svg>
-            </button>
-            <button class="action-btn edit" title="Edit Collection" data-collection-id="${collection.id}">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M8.5 1.5l2 2M1 11l.5-2L9 1.5l2 2L3.5 11z"/>
-              </svg>
-            </button>
-            <button class="action-btn delete" title="Delete Collection" data-collection-id="${collection.id}">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M2 3h8M4 3V2h4v1M3 3v7a1 1 0 001 1h4a1 1 0 001-1V3"/>
-              </svg>
-            </button>
           </div>
         </div>
         <div class="collection-requests" data-collection="${collection.id}"></div>
@@ -2248,19 +2300,10 @@ class App {
         });
       }
 
-      collectionEl.querySelector('.action-btn.add-sub').addEventListener('click', (e) => {
+      headerEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        this.addSubcollection(collection.id);
-      });
-
-      collectionEl.querySelector('.action-btn.edit').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.editCollection(collection);
-      });
-
-      collectionEl.querySelector('.action-btn.delete').addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.deleteCollection(collection.id);
+        this.showCollectionContextMenu(e, collection);
       });
 
       const requestsContainer = collectionEl.querySelector('.collection-requests');

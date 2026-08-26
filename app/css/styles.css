@@ -124,6 +124,24 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Populated from chrome.runtime.getManifest().version; stays empty outside the extension */
+.version-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border: 1px solid var(--border-primary);
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+.version-badge:empty {
+  display: none;
+}
+
 .header-actions {
   display: flex;
   gap: 4px;
@@ -423,12 +441,13 @@ html, body {
 }
 
 .collection-actions {
-  display: none;
+  display: flex;
+  visibility: hidden;
   gap: 4px;
 }
 
 .collection-header:hover .collection-actions {
-  display: flex;
+  visibility: visible;
 }
 
 .collection-requests {
@@ -479,12 +498,13 @@ html, body {
 }
 
 .request-actions {
-  display: none;
+  display: flex;
+  visibility: hidden;
   gap: 2px;
 }
 
 .request-item:hover .request-actions {
-  display: flex;
+  visibility: visible;
 }
 
 .history-header {
@@ -708,13 +728,14 @@ html, body {
 }
 
 .request-item .request-actions {
-  display: none;
+  display: flex;
+  visibility: hidden;
   gap: 2px;
   margin-left: auto;
 }
 
 .request-item:hover .request-actions {
-  display: flex;
+  visibility: visible;
 }
 
 .request-item .action-btn {
@@ -882,12 +903,13 @@ html, body {
 }
 
 .collection-header .collection-actions {
-  display: none;
+  display: flex;
+  visibility: hidden;
   gap: 2px;
 }
 
 .collection-header:hover .collection-actions {
-  display: flex;
+  visibility: visible;
 }
 
 .collection-header .action-btn {

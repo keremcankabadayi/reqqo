@@ -34,6 +34,7 @@
             <rect width="32" height="32" rx="8" fill="url(#logoGrad)" mask="url(#logoMask)"/>
           </svg>
           <span>Reqqo</span>
+          <span class="version-badge" id="versionBadge" title="Extension version"></span>
         </h1>
         <div class="header-actions">
           <div class="dropdown" id="newDropdown">
@@ -177,7 +178,24 @@
           <span>Close All</span>
         </button>
       </div>
-      
+
+      <!-- Collection Context Menu -->
+      <div class="tab-context-menu" id="collectionContextMenu">
+        <button class="tab-context-menu-item" id="collectionContextAddSub">
+          <span class="tab-context-menu-icon">＋</span>
+          <span>Add Subcollection</span>
+        </button>
+        <button class="tab-context-menu-item" id="collectionContextEdit">
+          <span class="tab-context-menu-icon">✏️</span>
+          <span>Edit Collection</span>
+        </button>
+        <div class="tab-context-menu-divider"></div>
+        <button class="tab-context-menu-item danger" id="collectionContextDelete">
+          <span class="tab-context-menu-icon">🗑</span>
+          <span>Delete Collection</span>
+        </button>
+      </div>
+
       <!-- URL Bar -->
       <div class="url-bar">
           <select class="method-select" id="requestMethod">
