@@ -59,6 +59,52 @@ class App {
     badge.textContent = `v${version}`;
   }
 
+  // Layout sizes live in localStorage rather than IndexedDB so they can be read
+  // synchronously and applied before the first paint — no resize flash on open.
+  readLayout() {
+    try {
+      return JSON.parse(localStorage.getItem('reqqo_layout')) || {};
+    } catch (error) {
+      console.error('Failed to load layout from localStorage:', error);
+      return {};
+    }
+  }
+
+  saveLayout(patch) {
+    // A click on a handle without dragging leaves style.width empty -> NaN;
+    // dropping those keeps a stray click from wiping a good saved size.
+    const clean = Object.fromEntries(
+      Object.entries(patch).filter(([, value]) => Number.isFinite(value))
+    );
+    if (!Object.keys(clean).length) return;
+
+    try {
+      localStorage.setItem('reqqo_layout', JSON.stringify({ ...this.readLayout(), ...clean }));
+    } catch (error) {
+      console.error('Failed to save layout to localStorage:', error);
+    }
+  }
+
+  clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  // Clamped with the same bounds the drag handlers enforce, so a value saved at
+  // a different window size can never wedge the layout off-screen.
+  restoreLayout() {
+    const { sidebarWidth, requestWidthPercent } = this.readLayout();
+
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar && Number.isFinite(sidebarWidth)) {
+      sidebar.style.width = `${this.clampNumber(sidebarWidth, 200, 500)}px`;
+    }
+
+    const requestSection = document.querySelector('.request-section');
+    if (requestSection && Number.isFinite(requestWidthPercent)) {
+      requestSection.style.width = `${this.clampNumber(requestWidthPercent, 20, 70)}%`;
+    }
+  }
+
   setupResizers() {
     // Request/Response resizer
     const resizeHandle = document.getElementById('resizeHandle');
@@ -93,6 +139,8 @@ class App {
         resizeHandle.classList.remove('resizing');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        // Persist on drag end only — writing per mousemove would hammer localStorage
+        this.saveLayout({ requestWidthPercent: parseFloat(requestSection.style.width) });
       }
     });
     
@@ -125,8 +173,11 @@ class App {
         sidebarResizeHandle.classList.remove('resizing');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        this.saveLayout({ sidebarWidth: parseFloat(sidebar.style.width) });
       }
     });
+
+    this.restoreLayout();
   }
 
   bindEvents() {
