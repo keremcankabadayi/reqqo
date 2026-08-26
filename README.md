@@ -171,9 +171,3 @@ MIT License - feel free to use this project for personal or commercial purposes.
 ## Author
 
 Created by [@keremcankabadayi](https://github.com/keremcankabadayi)
-
----
-
-**Reqqo** - Making API testing simple and accessible.
-
-Built with ❤️ using [Cursor AI](https://cursor.com)

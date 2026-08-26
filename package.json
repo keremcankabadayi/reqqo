@@ -7,7 +7,7 @@
     "check:refs": "node scripts/check-references.mjs",
     "check:vendor": "node scripts/check-vendor.mjs",
     "lint": "eslint .",
-    "test": "node --test \"test/**/*.test.js\"",
+    "test": "node --test test/*.test.js",
     "test:e2e": "playwright test",
     "package": "./scripts/package.sh"
   },
