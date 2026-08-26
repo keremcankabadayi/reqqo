@@ -357,5 +357,13 @@ class TabManager {
   }
 }
 
-window.tabManager = new TabManager();
+// Guarded so the Node test runner can require this file, where there is no
+// window. `module` is undefined in the browser, so the export below is inert there.
+if (typeof window !== 'undefined') {
+  window.tabManager = new TabManager();
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { TabManager };
+}
 

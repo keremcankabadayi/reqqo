@@ -3839,8 +3839,17 @@ class App {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  window.app = new App();
-  window.app.init();
-});
+// Guarded so the Node test runner can require this file for its pure helpers
+// (curl parsing, layout clamping) without a DOM. Inert in the browser, where
+// `module` is undefined.
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    window.app = new App();
+    window.app.init();
+  });
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { App };
+}
 

@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the in-flight run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # The extension has no build step, so these three stand in for one:
+      # nothing else would catch a parse error, a dangling asset reference or a
+      # tampered vendored bundle before Chrome loads the page.
+      - name: Parse every shipped script
+        run: npm run check:syntax
+
+      - name: Verify referenced assets exist
+        run: npm run check:refs
+
+      - name: Verify vendored bundles are unchanged
+        run: npm run check:vendor
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Shellcheck packaging script
+        run: shellcheck scripts/package.sh
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run extension tests
+        run: npm run test:e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the Web Store zip
+        run: ./scripts/package.sh
+
+      # package.sh only prints a warning about stray files; in CI that must be fatal.
+      - name: Fail on files that must never ship
+        run: |
+          zip_path="$(ls dist/reqqo-*.zip)"
+          if unzip -Z1 "$zip_path" | grep -E '(\.DS_Store|\.git/|\.idea/|node_modules/|vendor\.lock\.json)'; then
+            echo "::error::packaged zip contains files that must not ship"
+            exit 1
+          fi
+          echo "zip is clean: $zip_path"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reqqo-unpacked-zip
+          path: dist/*.zip
+          retention-days: 14

@@ -1,0 +1,15 @@
+{
+  "_comment": "Checksums of vendored third-party assets in app/lib, verified by scripts/check-vendor.mjs. Update deliberately when upgrading, and record the upstream version and source URL in the same commit.",
+  "files": {
+    "jsoneditor.min.js": {
+      "sha256": "82376ebe2f87d2c8dd26020ea82d27945733aa5c527e9cb4b87ec1f9389c85dc",
+      "version": "unknown",
+      "source": "https://github.com/josdejong/jsoneditor"
+    },
+    "jsoneditor.min.css": {
+      "sha256": "a2147f0ffe1c6102fff782c5a464b390eab820e5a0359c3c734d2807b2616b7e",
+      "version": "unknown",
+      "source": "https://github.com/josdejong/jsoneditor"
+    }
+  }
+}

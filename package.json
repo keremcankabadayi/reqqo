@@ -1,0 +1,18 @@
+{
+  "name": "reqqo",
+  "private": true,
+  "description": "Tooling for the Reqqo Chrome extension. The extension itself ships no npm dependencies.",
+  "scripts": {
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:refs": "node scripts/check-references.mjs",
+    "check:vendor": "node scripts/check-vendor.mjs",
+    "lint": "eslint .",
+    "test": "node --test \"test/**/*.test.js\"",
+    "test:e2e": "playwright test",
+    "package": "./scripts/package.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "eslint": "^9.17.0"
+  }
+}

@@ -1,0 +1,38 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so newly published queries reach an idle repo too.
+    - cron: '37 5 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # Noisier than the default suite, deliberately: this codebase builds
+          # DOM through innerHTML in several places, which is exactly what the
+          # extra injection queries examine.
+          queries: security-and-quality
+          config: |
+            paths-ignore:
+              - app/lib
+              - dist
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

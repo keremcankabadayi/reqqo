@@ -38,4 +38,7 @@ npm-debug.log*
 
 # Tooling artifacts
 .playwright-mcp/
+test-results/
+playwright-report/
+blob-report/
 
