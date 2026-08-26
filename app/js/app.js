@@ -233,10 +233,24 @@ class App {
     });
 
     document.getElementById('requestUrl').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      // Cmd/Ctrl+Enter is handled globally below; without this guard both
+      // handlers would fire and the request would be sent twice.
+      if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
         this.sendRequest();
       }
     });
+
+    // Capture phase so the shortcut still works from the body editor and other
+    // inputs, which would otherwise consume Enter before it reaches document.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return;
+
+      // stopPropagation keeps Monaco from also inserting a newline in the body
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!this.isLoading) this.sendRequest();
+    }, true);
 
     document.getElementById('requestUrl').addEventListener('paste', async (e) => {
       const pastedText = e.clipboardData.getData('text').trim();
